@@ -4,6 +4,7 @@
 #include <memory>
 #include "grfmt_gdal.hpp"
 #include <boost/asio.hpp>
+#include <mutex>
 namespace boost
 {
 	namespace system {
@@ -22,20 +23,23 @@ public:
 		int expirableCounter;
 	};
 	
-	ImgDecoderFactory();
-	virtual ~ImgDecoderFactory();
+	static std::shared_ptr<ImgDecoderFactory> Instance();
+	~ImgDecoderFactory();
 
 	//TODO: need to throw an exception if it can't open the dataset
-	static std::shared_ptr<GdalDecoder> getDecoder(const std::string& filePath);
+	std::shared_ptr<GdalDecoder> getDecoder(const std::string& filePath);
 private: 
+	ImgDecoderFactory();
+	void checkExpired(const boost::system::error_code &e);
+
 	//TODO: need to have a time expired mechanism to expire entries in the below map
-	static std::unordered_map<std::string, ExpirableDecoderStruct> s_decoderMap;
+	std::unordered_map<std::string, ExpirableDecoderStruct> m_decoderMap;
+	boost::asio::io_service m_ioservice;
+	std::shared_ptr<boost::asio::deadline_timer> m_expiredTimerPtr;
+	std::mutex m_decoderMapMutex;
+	
 
-	static boost::asio::io_service s_ioservice;
-
-	static std::shared_ptr<boost::asio::deadline_timer> s_expiredTimerPtr;
-
-	static void checkExpired(const boost::system::error_code &e);
+	static std::shared_ptr<ImgDecoderFactory> s_factoryPtr;
 };
 
 }

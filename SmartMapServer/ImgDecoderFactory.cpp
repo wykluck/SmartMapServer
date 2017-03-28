@@ -6,14 +6,24 @@
 
 using namespace cvGIS;
 
-std::unordered_map<std::string, ImgDecoderFactory::ExpirableDecoderStruct> ImgDecoderFactory::s_decoderMap;
-boost::asio::io_service ImgDecoderFactory::s_ioservice;
-std::shared_ptr<boost::asio::deadline_timer> ImgDecoderFactory::s_expiredTimerPtr;
+
+
+std::shared_ptr<ImgDecoderFactory> ImgDecoderFactory::s_factoryPtr;
+
+std::shared_ptr<ImgDecoderFactory> ImgDecoderFactory::Instance()
+{
+	//TODO: need double checked pattern to gurantee uniqueness in multi-threading situation
+	if (!s_factoryPtr)
+	{
+		s_factoryPtr.reset(new ImgDecoderFactory());
+	}
+	return s_factoryPtr;
+}
 
 
 ImgDecoderFactory::ImgDecoderFactory()
 {
-	
+	m_expiredTimerPtr.reset(new boost::asio::deadline_timer(m_ioservice));
 }
 
 
@@ -25,12 +35,13 @@ ImgDecoderFactory::~ImgDecoderFactory()
 void ImgDecoderFactory::checkExpired(const boost::system::error_code &e)
 {
 	//check expirable count
-	for (auto expirableDecoderStrutItr = s_decoderMap.begin(); expirableDecoderStrutItr != s_decoderMap.end(); )
+	std::unique_lock<std::mutex> lock(m_decoderMapMutex);
+	for (auto expirableDecoderStrutItr = m_decoderMap.begin(); expirableDecoderStrutItr != m_decoderMap.end(); )
 	{
 		if (expirableDecoderStrutItr->second.expirableCounter == 0)
 		{
 			//delete the entry if it is expired
-			s_decoderMap.erase(expirableDecoderStrutItr);
+			m_decoderMap.erase(expirableDecoderStrutItr);
 		}
 		else
 		{
@@ -40,25 +51,21 @@ void ImgDecoderFactory::checkExpired(const boost::system::error_code &e)
 		}
 	}
 	//cancel the timer if the map is empty so that the thread will not be called.
-	if (s_decoderMap.empty())
+	if (m_decoderMap.empty())
 	{
-		s_expiredTimerPtr->cancel();
+		m_expiredTimerPtr->cancel();
 	}
 }
 
 std::shared_ptr<GdalDecoder> ImgDecoderFactory::getDecoder(const std::string& filePath) 
 {
 	//start the timer for cleaning the map
-	if (s_expiredTimerPtr.get() == nullptr)
-	{
-		s_expiredTimerPtr.reset(new boost::asio::deadline_timer(s_ioservice));
-	}
-	s_expiredTimerPtr->expires_from_now(boost::posix_time::minutes(1));
-	s_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired,  boost::asio::placeholders::error));
+	m_expiredTimerPtr->expires_from_now(boost::posix_time::minutes(1));
+	m_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired, this, boost::asio::placeholders::error));
 
-	
-	auto expirableDecoderItr = s_decoderMap.find(filePath);
-	if (expirableDecoderItr == s_decoderMap.end())
+	std::unique_lock<std::mutex> lock(m_decoderMapMutex);
+	auto expirableDecoderItr = m_decoderMap.find(filePath);
+	if (expirableDecoderItr == m_decoderMap.end())
 	{
 		std::shared_ptr<GdalDecoder> gdalDecoderPtr(new GdalDecoder());
 		gdalDecoderPtr->setSource(filePath);
@@ -70,7 +77,7 @@ std::shared_ptr<GdalDecoder> ImgDecoderFactory::getDecoder(const std::string& fi
 		//everything will be expired roughly within 5 minutes
 		ExpirableDecoderStruct expirableDecoderStruct = { gdalDecoderPtr, 5 };
 
-		auto insertRes = s_decoderMap.insert(std::make_pair(filePath, expirableDecoderStruct));
+		auto insertRes = m_decoderMap.insert(std::make_pair(filePath, expirableDecoderStruct));
 		if (insertRes.second)
 		{
 			expirableDecoderItr = insertRes.first;

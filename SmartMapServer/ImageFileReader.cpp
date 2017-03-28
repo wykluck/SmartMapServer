@@ -23,7 +23,7 @@ ImageFileReader::~ImageFileReader()
 ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox)
 {
 	
-	auto gdalDecoderPtr = ImgDecoderFactory::getDecoder(datasetFilePath);
+	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
 
 	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> readBlockImgQueue;
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
