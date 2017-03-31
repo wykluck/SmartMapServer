@@ -33,7 +33,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 	//TDDO: only check block counts
 	std::size_t totalBlockCounts = 0;
 
-	if (gdalDecoderPtr->GetXBlockSize() > 0 && gdalDecoderPtr->GetYBlockSize() > 0)
+	if (gdalDecoderPtr->GetXBlockSize() > 1 && gdalDecoderPtr->GetYBlockSize() > 1)
 	{
 		//calculate the required blocks that need to process
 		int startBlockX = bbox.tl().x / gdalDecoderPtr->GetXBlockSize();
@@ -81,16 +81,19 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 
 
 		//compress the reassembled image to jpg and send the response back
-		std::vector<uchar> resBuf;
+		ProcessResult processRes(true);
 		std::vector<int> param = std::vector<int>(2);
 		param[0] = CV_IMWRITE_JPEG_QUALITY;
 		param[1] = 95;
 		cv::imencode(".jpg", assembledImage.rowRange(bbox.tl().y - startBlockY * gdalDecoderPtr->GetYBlockSize(), bbox.br().y - bbox.tl().y + 1)
 			.colRange(bbox.tl().x - startBlockX * gdalDecoderPtr->GetXBlockSize(), bbox.br().x - bbox.tl().x + 1),
-			resBuf, param);
-		return ProcessResult(true, resBuf);
+			processRes.resBuf, param);
+		return processRes;
 	}
-
+	else
+	{
+		return ProcessResult(false);
+	}
 
 	
 

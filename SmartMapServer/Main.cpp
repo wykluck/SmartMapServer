@@ -12,6 +12,7 @@
 #include <ctime>
 #include <locale>
 #include <codecvt>
+#include <algorithm>
 #include "ServerSiteConfig.h"
 #include "ImageFileReader.h"
 #include "blockingconcurrentqueue.h"
@@ -54,12 +55,17 @@ int main(int argc, char* argv[])
 	int count = 0;
 
 	listener.support(methods::GET, [count](http_request request) mutable {
-		std::wcout << "GET " << request.request_uri().to_string() << std::endl;
+		
+		//decode the url and convert to lower case
+		utility::string_t decodedUrlString = web::uri::decode(request.request_uri().to_string());
+		std::transform(decodedUrlString.begin(), decodedUrlString.end(), decodedUrlString.begin(), ::tolower);
+		web::uri decodedUri(decodedUrlString);
+		std::wcout << "GET " << decodedUrlString << std::endl;
 
-		//url is supposed to be http://hostname:port/image/<imagePath>/export?bbox=<xmin>,<ymin>,<xmax>,<ymax> 
+		//url is supposed to be http://hostname:port/image/<imagePath>/export?bbox=<xmin>,<ymin>,<xmax>,<ymax>&width=<width>&height=<height>&style=<style>&format=<imageformat>
 		
 		//get image file physical path
-		auto http_path_vec = uri::split_path(request.request_uri().path());
+		auto http_path_vec = uri::split_path(decodedUri.path());
 		utility::string_t imageFilePath = ServerSiteConfig::getImageRootDir();
 		if (http_path_vec.size() == 3 && http_path_vec[0] == U("image") && http_path_vec[2] == U("export"))
 		{
@@ -72,7 +78,7 @@ int main(int argc, char* argv[])
 		std::string imageFilePathUtf8 = convert.to_bytes(imageFilePath.c_str());
 
 
-		auto http_get_vars = uri::split_query(request.request_uri().query());
+		auto http_get_vars = uri::split_query(decodedUri.query());
 		auto param_bbox = http_get_vars.find(U("bbox"));
 		std::unique_ptr<cv::Rect2i> bboxPtr;
 		if (param_bbox != end(http_get_vars))

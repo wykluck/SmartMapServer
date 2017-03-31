@@ -8,10 +8,12 @@ class ImageFileReader
 public:
 	struct ProcessResult
 	{
-		ProcessResult(bool isSuccessful_, const std::vector<uchar>& resBuf_)
+		ProcessResult(bool isSuccessful_) : isSuccessful(isSuccessful)
+		{}
+		ProcessResult(ProcessResult&& processRes_)
 		{
-			isSuccessful = isSuccessful_;
-			resBuf = std::move(resBuf_);
+			isSuccessful = processRes_.isSuccessful;
+			resBuf = std::move(processRes_.resBuf);
 		}
 		bool isSuccessful;
 		std::vector<uchar> resBuf;
