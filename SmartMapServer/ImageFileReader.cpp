@@ -20,6 +20,7 @@ ImageFileReader::~ImageFileReader()
 {
 }
 
+
 ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox)
 {
 	
@@ -85,8 +86,10 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 		std::vector<int> param = std::vector<int>(2);
 		param[0] = CV_IMWRITE_JPEG_QUALITY;
 		param[1] = 95;
-		cv::imencode(".jpg", assembledImage.rowRange(bbox.tl().y - startBlockY * gdalDecoderPtr->GetYBlockSize(), bbox.br().y - bbox.tl().y + 1)
-			.colRange(bbox.tl().x - startBlockX * gdalDecoderPtr->GetXBlockSize(), bbox.br().x - bbox.tl().x + 1),
+		auto xBlockStart = startBlockX * gdalDecoderPtr->GetXBlockSize();
+		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
+		cv::imencode(".jpg", assembledImage.rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
+			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1),
 			processRes.resBuf, param);
 		return processRes;
 	}

@@ -447,10 +447,25 @@ bool GdalDecoder::readBlockData(int xBlockIndex, int yBlockIndex, Mat& blockImg)
 	else
 		yValid = m_yBlockSize;
 
+	//need to read as BGR order
 	for (int c = 0; c<nChannels; c++) {
 
 		// get the GDAL Band
 		GDALRasterBand* band = m_dataset->GetRasterBand(c + 1);
+		//OpenCV requires the order has to be 'BGR' when reading into a cv::Mat
+		auto targetChannel = c;
+		switch (band->GetColorInterpretation())
+		{
+		case GCI_RedBand:
+			targetChannel = 2;
+			break;
+		case GCI_GreenBand:
+			targetChannel = 1;
+			break;
+		case GCI_BlueBand:
+			targetChannel = 0;
+			break;
+		}
 
 		// set the read buffer to zero
 		readBuffer = 0;
@@ -470,32 +485,32 @@ bool GdalDecoder::readBlockData(int xBlockIndex, int yBlockIndex, Mat& blockImg)
 				switch (gdalType)
 				{
 				case GDT_Byte:
-					blockImg.ptr<uchar>(y, x)[c]
+					blockImg.ptr<uchar>(y, x)[targetChannel]
 						= readBuffer.at<uchar>(y, x);
 					break;
 
 				case GDT_UInt16:
-					blockImg.ptr<ushort>(y, x)[c]
+					blockImg.ptr<ushort>(y, x)[targetChannel]
 						= readBuffer.at<ushort>(y, x);
 					break;
 
 				case GDT_Int16:
-					blockImg.ptr<short>(y, x)[c]
+					blockImg.ptr<short>(y, x)[targetChannel]
 						= readBuffer.at<short>(y, x);
 					break;
 
 				case GDT_Int32:
-					blockImg.ptr<int>(y, x)[c]
+					blockImg.ptr<int>(y, x)[targetChannel]
 						= readBuffer.at<int>(y, x);
 					break;
 
 				case GDT_Float32:
-					blockImg.ptr<float>(y, x)[c]
+					blockImg.ptr<float>(y, x)[targetChannel]
 						= readBuffer.at<float>(y, x);
 					break;
 
 				case GDT_Float64:
-					blockImg.ptr<double>(y, x)[c]
+					blockImg.ptr<double>(y, x)[targetChannel]
 						= readBuffer.at<double>(y, x);
 					break;
 
