@@ -1,0 +1,14 @@
+{
+  "name": "openlayers-closure-application",
+  "version": "1.0.0",
+  "description": "openlayers closure application",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "openlayers": "^4.0.1"
+  }
+}

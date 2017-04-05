@@ -23,7 +23,15 @@ std::shared_ptr<ImgDecoderFactory> ImgDecoderFactory::Instance()
 
 ImgDecoderFactory::ImgDecoderFactory()
 {
-	m_expiredTimerPtr.reset(new boost::asio::deadline_timer(m_ioservice));
+	m_expiredTimerPtr.reset(new boost::asio::deadline_timer(m_ioservice, boost::posix_time::seconds(5)));
+	std::thread(
+		[&]()
+	{
+		//start the timer for cleaning the map
+		m_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired, this, boost::asio::placeholders::error));
+		m_ioservice.run();
+	}
+	).detach();
 }
 
 
@@ -36,12 +44,13 @@ void ImgDecoderFactory::checkExpired(const boost::system::error_code &e)
 {
 	//check expirable count
 	std::unique_lock<std::mutex> lock(m_decoderMapMutex);
+	
 	for (auto expirableDecoderStrutItr = m_decoderMap.begin(); expirableDecoderStrutItr != m_decoderMap.end(); )
 	{
 		if (expirableDecoderStrutItr->second.expirableCounter == 0)
 		{
 			//delete the entry if it is expired
-			m_decoderMap.erase(expirableDecoderStrutItr);
+			m_decoderMap.erase(expirableDecoderStrutItr++);
 		}
 		else
 		{
@@ -51,18 +60,27 @@ void ImgDecoderFactory::checkExpired(const boost::system::error_code &e)
 		}
 	}
 	//cancel the timer if the map is empty so that the thread will not be called.
-	if (m_decoderMap.empty())
+	if (!m_decoderMap.empty())
 	{
-		m_expiredTimerPtr->cancel();
+		m_expiredTimerPtr->expires_from_now(boost::posix_time::seconds(5));
+		m_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired, this, boost::asio::placeholders::error));
 	}
 }
 
 std::shared_ptr<GdalDecoder> ImgDecoderFactory::getDecoder(const std::string& filePath) 
 {
-	//start the timer for cleaning the map
-	m_expiredTimerPtr->expires_from_now(boost::posix_time::minutes(1));
-	m_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired, this, boost::asio::placeholders::error));
-
+	if (m_ioservice.stopped())
+	{
+		std::thread(
+			[&]()
+		{
+			//start the timer for cleaning the map
+			m_expiredTimerPtr->async_wait(boost::bind(&ImgDecoderFactory::checkExpired, this, boost::asio::placeholders::error));
+			m_ioservice.reset();
+			m_ioservice.run();
+		}
+		).detach();
+	}
 	std::unique_lock<std::mutex> lock(m_decoderMapMutex);
 	auto expirableDecoderItr = m_decoderMap.find(filePath);
 	if (expirableDecoderItr == m_decoderMap.end())

@@ -69,14 +69,14 @@ void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<Bl
 					break;
 				if (res)
 				{
-					processedBlockImgQueue.try_enqueue(inBlockStruct);
-					/*cv::cvtColor(inBlockStruct.blockImg, hsvBlockImg, cv::COLOR_BGR2HSV);
+					//processedBlockImgQueue.try_enqueue(inBlockStruct);
+					cv::cvtColor(inBlockStruct.blockImg, hsvBlockImg, cv::COLOR_BGR2HSV);
 					cv::pyrMeanShiftFiltering(hsvBlockImg, inBlockStruct.blockImg, 20, 15, 1);
 					cv::cvtColor(inBlockStruct.blockImg, outBlockImg, cv::COLOR_HSV2BGR);
 					BlockImgStruct processedBlockStruct(inBlockStruct.xIndex, inBlockStruct.yIndex);
 					processedBlockStruct.blockImg = outBlockImg;
 					processedBlockImgQueue.try_enqueue(processedBlockStruct);
-					*/
+					
 
 					
 					
