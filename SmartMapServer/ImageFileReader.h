@@ -1,5 +1,7 @@
 #pragma once
 #include <opencv2/core.hpp>
+#include "blockingconcurrentqueue.h"
+#include "BlockImageProcessor.h"
 
 namespace cvGIS
 {
@@ -23,6 +25,11 @@ public:
 	virtual ~ImageFileReader();
 
 	ProcessResult readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox);
+
+private:
+	bool readCachedProcessResult(int xIndex, int yIndex, const std::string& cacheDirUtf8, int& imgType);
+	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> m_readBlockImgQueue;
+	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> m_processedBlockImgQueue;
 
 };
 

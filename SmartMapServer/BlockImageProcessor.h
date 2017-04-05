@@ -26,6 +26,8 @@ namespace cvGIS {
 	
 		void BlockImageProcessor::postprocess(cv::Mat& img, const cv::Scalar& colorDiff = cv::Scalar::all(1));
 
+		static std::string getBlockFileCachePath(int xIndex, int yIndex, const std::string& cacheDirUtf8);
+
 		void setReadComplete() {
 			m_hasReadComplete = true;
 		}

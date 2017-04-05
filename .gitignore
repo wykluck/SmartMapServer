@@ -1,7 +1,8 @@
 x64/
+WebClient/node_modules/
 *.sdf
 *.suo
 *.opensdf
 *.db
 *.opendb
-SmartAnalyzer/Projects/My Amplifier XE Results - Logging/My Amplifier XE Results - Logging.amplxeproj
+.suo

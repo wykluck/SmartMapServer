@@ -23,7 +23,7 @@ var layers = [
 	new ol.layer.Image({
 	  source: new ol.source.ImageExport({
 		url: 'http://localhost:12345/image',
-		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
+		params: {'LAYER': '04_072_uncompressed_15759_15756.tif'},
 		projection: projection		
 	  })
 	})
@@ -50,7 +50,7 @@ app.map = new ol.Map({
 	layers: layers,
 	target: 'map',
 	view: new ol.View({
-	  center: [16501, -30350],
+	  center: [7879, -7878],
 	  resolution: 1,
 	  projection: projection
 	})

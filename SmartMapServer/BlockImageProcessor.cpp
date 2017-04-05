@@ -25,7 +25,16 @@ BlockImageProcessor::~BlockImageProcessor()
 	}
 }
 
-
+std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, const std::string& cacheDirUtf8)
+{
+	std::string outputFilePath = cacheDirUtf8;
+	outputFilePath += "\\";
+	outputFilePath += std::to_string(xIndex);
+	outputFilePath += "_";
+	outputFilePath += std::to_string(yIndex);
+	outputFilePath += ".jpg";
+	return outputFilePath;
+}
 
 void BlockImageProcessor::postprocess(cv::Mat& img, const cv::Scalar& colorDiff)
 {
@@ -77,18 +86,8 @@ void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<Bl
 					processedBlockStruct.blockImg = outBlockImg;
 					processedBlockImgQueue.try_enqueue(processedBlockStruct);
 					
-
 					
-					
-					/*
-					cv::String outputFilePath = m_cacheDir;
-					outputFilePath += "\\";
-					outputFilePath += std::to_string(inBlockStruct.yIndex);
-					outputFilePath += "_";
-					outputFilePath += std::to_string(inBlockStruct.xIndex);
-					outputFilePath += ".jpg";
-					cv::imwrite(outputFilePath, outBlockImg);
-					*/
+					cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir), outBlockImg);
 				}
 			}
 		}
