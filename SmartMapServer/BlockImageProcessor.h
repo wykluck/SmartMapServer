@@ -1,6 +1,7 @@
 #pragma once
 #include <vector>
 #include <thread>
+#include <mutex>
 #include <opencv2/core.hpp>
 #include "blockingconcurrentqueue.h"
 namespace cvGIS {
@@ -29,6 +30,7 @@ namespace cvGIS {
 		static std::string getBlockFileCachePath(int xIndex, int yIndex, const std::string& cacheDirUtf8);
 
 		void setReadComplete() {
+			std::unique_lock<std::mutex> lock(m_readCompleteMutex);
 			m_hasReadComplete = true;
 		}
 
@@ -39,6 +41,7 @@ namespace cvGIS {
 		std::size_t m_threadCount;
 		cv::String m_cacheDir;
 		bool m_hasReadComplete;
+		std::mutex m_readCompleteMutex;
 	};
 
 }

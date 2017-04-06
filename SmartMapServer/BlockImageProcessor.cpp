@@ -73,9 +73,13 @@ void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<Bl
 			{
 				BlockImgStruct inBlockStruct;
 				cv::Mat hsvBlockImg, outBlockImg;
-				bool res = readBlockImgQueue.wait_dequeue_timed(inBlockStruct, std::chrono::milliseconds(100));
-				if (!res && m_hasReadComplete)
-					break;
+				bool res = false;
+				{
+					std::unique_lock<std::mutex> lock(m_readCompleteMutex);
+					res = readBlockImgQueue.wait_dequeue_timed(inBlockStruct, std::chrono::milliseconds(100));
+					if (!res && m_hasReadComplete)
+						break;
+				}
 				if (res)
 				{
 					//processedBlockImgQueue.try_enqueue(inBlockStruct);
@@ -84,7 +88,10 @@ void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<Bl
 					cv::cvtColor(inBlockStruct.blockImg, outBlockImg, cv::COLOR_HSV2BGR);
 					BlockImgStruct processedBlockStruct(inBlockStruct.xIndex, inBlockStruct.yIndex);
 					processedBlockStruct.blockImg = outBlockImg;
-					processedBlockImgQueue.try_enqueue(processedBlockStruct);
+					while (!processedBlockImgQueue.enqueue(processedBlockStruct))
+					{
+						std::this_thread::sleep_for(std::chrono::milliseconds(50));
+					}
 					
 					
 					cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir), outBlockImg);
