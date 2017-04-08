@@ -82,19 +82,37 @@ void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<Bl
 				}
 				if (res)
 				{
-					//processedBlockImgQueue.try_enqueue(inBlockStruct);
-					cv::cvtColor(inBlockStruct.blockImg, hsvBlockImg, cv::COLOR_BGR2HSV);
-					cv::pyrMeanShiftFiltering(hsvBlockImg, inBlockStruct.blockImg, 20, 15, 1);
-					cv::cvtColor(inBlockStruct.blockImg, outBlockImg, cv::COLOR_HSV2BGR);
 					BlockImgStruct processedBlockStruct(inBlockStruct.xIndex, inBlockStruct.yIndex);
-					processedBlockStruct.blockImg = outBlockImg;
-					while (!processedBlockImgQueue.enqueue(processedBlockStruct))
+					if (inBlockStruct.type == BlockImgStructType::ReadCacheFile)
 					{
-						std::this_thread::sleep_for(std::chrono::milliseconds(50));
+						processedBlockStruct.blockImg = cv::imread(inBlockStruct.blockFileCachePath);
+						//push the processedBlockStruct to its corresponding output queue
+						while (!inBlockStruct.pQueueForOutput->enqueue(processedBlockStruct))
+						{
+							std::this_thread::sleep_for(std::chrono::milliseconds(50));
+						}
+					}
+					else if (inBlockStruct.type == BlockImgStructType::BlockForProcess)
+					{ 
+						cv::cvtColor(inBlockStruct.blockImg, hsvBlockImg, cv::COLOR_BGR2HSV);
+						cv::pyrMeanShiftFiltering(hsvBlockImg, inBlockStruct.blockImg, 20, 15, 1);
+						cv::cvtColor(inBlockStruct.blockImg, outBlockImg, cv::COLOR_HSV2BGR);
+						processedBlockStruct.blockImg = outBlockImg;
+						//first push the processedBlockStruct to its corresponding output queue
+						while (!inBlockStruct.pQueueForOutput->enqueue(processedBlockStruct))
+						{
+							std::this_thread::sleep_for(std::chrono::milliseconds(50));
+						}
+						//then write the result to the output tile cache directory
+						cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir),
+							outBlockImg);
+					}
+					else
+					{
+						//TODO: should not come to here
 					}
 					
 					
-					cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir), outBlockImg);
 				}
 			}
 		}

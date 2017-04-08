@@ -28,7 +28,7 @@ public:
 
 private:
 	bool readCachedProcessResult(int xIndex, int yIndex, const std::string& cacheDirUtf8, int& imgType);
-	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> m_readBlockImgQueue;
+	static moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> s_readBlockImgQueue;
 	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> m_processedBlockImgQueue;
 
 };

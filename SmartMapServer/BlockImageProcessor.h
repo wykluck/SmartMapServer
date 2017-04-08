@@ -8,18 +8,40 @@ namespace cvGIS {
 	class BlockImageProcessor
 	{
 	public:
+		enum class BlockImgStructType
+		{
+			ReadCacheFile,
+			BlockForProcess,
+			ProcessedBlock
+		};
 		struct BlockImgStruct
 		{
 			BlockImgStruct() {};
-			BlockImgStruct(int xIndex_, int yIndex_) :
-				xIndex(xIndex_), yIndex(yIndex_)
+			BlockImgStruct(int xIndex_, int yIndex_, 
+				moodycamel::BlockingConcurrentQueue<BlockImgStruct>* pQueueForOutput_) :
+				xIndex(xIndex_), yIndex(yIndex_), type(BlockImgStructType::BlockForProcess), pQueueForOutput(pQueueForOutput_)
 			{
 
 			};
+			BlockImgStruct(int xIndex_, int yIndex_, const std::string& blockFileCachePath_,
+				moodycamel::BlockingConcurrentQueue<BlockImgStruct>* pQueueForOutput_) :
+				xIndex(xIndex_), yIndex(yIndex_), type(BlockImgStructType::ReadCacheFile),
+				blockFileCachePath(blockFileCachePath_), pQueueForOutput(pQueueForOutput_)
+			{
+
+			}
+			BlockImgStruct(int xIndex_, int yIndex_) :
+				xIndex(xIndex_), yIndex(yIndex_), type(BlockImgStructType::ProcessedBlock), pQueueForOutput(nullptr)
+			{
+
+			}
 
 			int xIndex;
 			int yIndex;
 			cv::Mat blockImg;
+			BlockImgStructType type;
+			std::string blockFileCachePath;
+			moodycamel::BlockingConcurrentQueue<BlockImgStruct>* pQueueForOutput;
 		};
 
 		void startProcessImg(moodycamel::BlockingConcurrentQueue<BlockImgStruct>& readBlockImgQueue, 
