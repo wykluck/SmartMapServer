@@ -44,26 +44,31 @@ namespace cvGIS {
 			moodycamel::BlockingConcurrentQueue<BlockImgStruct>* pQueueForOutput;
 		};
 
-		void startProcessImg(moodycamel::BlockingConcurrentQueue<BlockImgStruct>& readBlockImgQueue, 
-			moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct>& processedBlockImgQueue);
+		static std::shared_ptr<BlockImageProcessor> BlockImageProcessor::Instance();
+
+		~BlockImageProcessor();
+
+		void startProcessImg(moodycamel::BlockingConcurrentQueue<BlockImgStruct>& readBlockImgQueue);
 	
 		void BlockImageProcessor::postprocess(cv::Mat& img, const cv::Scalar& colorDiff = cv::Scalar::all(1));
 
 		static std::string getBlockFileCachePath(int xIndex, int yIndex, const std::string& cacheDirUtf8);
 
-		void setReadComplete() {
-			std::unique_lock<std::mutex> lock(m_readCompleteMutex);
-			m_hasReadComplete = true;
-		}
 
-		BlockImageProcessor(std::size_t threadCount, const cv::String& outputDir);
-		~BlockImageProcessor();
+		void setReadComplete();
+
 	private: 
+		BlockImageProcessor(std::size_t threadCount, const cv::String& outputDir);
+	
 		std::vector<std::thread> m_processThreadVec;
 		std::size_t m_threadCount;
 		cv::String m_cacheDir;
-		bool m_hasReadComplete;
-		std::mutex m_readCompleteMutex;
+		std::mutex m_cvMutex;
+		std::size_t m_startedTimes;
+		std::condition_variable s_cv;
+		moodycamel::BlockingConcurrentQueue<BlockImgStruct>* m_pReadBlockImgQueue;
+
+		static std::shared_ptr<BlockImageProcessor> s_blockImgPtr;
 	};
 
 }

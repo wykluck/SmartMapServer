@@ -24,12 +24,13 @@ public:
 	};
 	
 	static std::shared_ptr<ImgDecoderFactory> Instance();
-	~ImgDecoderFactory();
+	~ImgDecoderFactory() = default;
 
 	//TODO: need to throw an exception if it can't open the dataset
 	std::shared_ptr<GdalDecoder> getDecoder(const std::string& filePath);
 private: 
 	ImgDecoderFactory();
+	
 	void checkExpired(const boost::system::error_code &e);
 
 	//TODO: need to have a time expired mechanism to expire entries in the below map

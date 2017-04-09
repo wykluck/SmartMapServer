@@ -11,7 +11,7 @@
 
 using namespace cvGIS;
 using namespace boost::filesystem;
-moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> ImageFileReader::s_readBlockImgQueue;
+moodycamel::BlockingConcurrentQueue<BlockImageProcessor::BlockImgStruct> ImageFileReader::s_readBlockImgQueue;
 ImageFileReader::ImageFileReader()
 {
 }
@@ -26,7 +26,7 @@ bool ImageFileReader::readCachedProcessResult(int xIndex, int yIndex, const std:
 	std::string blockFileCachePath = BlockImageProcessor::getBlockFileCachePath(xIndex, yIndex, cacheDirUtf8);
 	if (exists(path(blockFileCachePath)))
 	{
-		cvGIS::BlockImageProcessor::BlockImgStruct processedBlockStruct(xIndex, yIndex);
+		BlockImageProcessor::BlockImgStruct processedBlockStruct(xIndex, yIndex);
 		processedBlockStruct.blockImg = cv::imread(blockFileCachePath);
 		imgType = processedBlockStruct.blockImg.type();
 		m_processedBlockImgQueue.enqueue(processedBlockStruct);
@@ -41,9 +41,10 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 	
 	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
 
+	
+	auto blockImgProcessorPtr = BlockImageProcessor::Instance();
 	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
 	std::string cacheDirUtf8 = convert.to_bytes(ServerSiteConfig::getImageCacheDir().c_str());
-	cvGIS::BlockImageProcessor blockprocessor(6, cacheDirUtf8);
 	
 	//TDDO: only check block counts
 	std::size_t totalBlockCounts = 0;
@@ -56,7 +57,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 		int endBlockX = bbox.br().x % gdalDecoderPtr->GetXBlockSize() == 0 ? (bbox.br().x / gdalDecoderPtr->GetXBlockSize()) : (bbox.br().x / gdalDecoderPtr->GetXBlockSize() + 1);
 		int endBlockY = bbox.br().y % gdalDecoderPtr->GetYBlockSize() == 0 ? (bbox.br().y / gdalDecoderPtr->GetYBlockSize()) : (bbox.br().y / gdalDecoderPtr->GetYBlockSize() + 1);
 		
-		blockprocessor.startProcessImg(s_readBlockImgQueue, m_processedBlockImgQueue);
+		blockImgProcessorPtr->startProcessImg(s_readBlockImgQueue);
 		int imgType;
 		for (auto yIndex = startBlockY; yIndex <= endBlockY; yIndex++)
 			for (auto xIndex = startBlockX; xIndex <= endBlockX; xIndex++)
@@ -91,7 +92,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 					}
 				}
 			}
-		blockprocessor.setReadComplete();
+		blockImgProcessorPtr->setReadComplete();
 
 		//wait to reassemble the processed blocks
 		int assembleImageRows = (endBlockY - startBlockY + 1) * gdalDecoderPtr->GetYBlockSize();

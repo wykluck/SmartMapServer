@@ -35,11 +35,6 @@ ImgDecoderFactory::ImgDecoderFactory()
 }
 
 
-ImgDecoderFactory::~ImgDecoderFactory()
-{
-}
-
-
 void ImgDecoderFactory::checkExpired(const boost::system::error_code &e)
 {
 	//check expirable count
