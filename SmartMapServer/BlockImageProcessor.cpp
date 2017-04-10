@@ -113,30 +113,7 @@ std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, c
 	return outputFilePath;
 }
 
-void BlockImageProcessor::postprocess(cv::Mat& img, const cv::Scalar& colorDiff)
-{
-	cv::RNG rng = cv::theRNG();
-	cv::Mat mask(img.rows + 2, img.cols + 2, CV_8UC1, cv::Scalar::all(0));
-	cv::Rect boundingRect;
-	for (int y = 0; y < img.rows; y++)
-	{
-		for (int x = 0; x < img.cols; x++)
-		{
-			if (mask.at<uchar>(y + 1, x + 1) == 0)
-			{
-				cv::Scalar ignoredNewVal(0, 0, 0);
 
-				int area = cv::floodFill(img, mask, cv::Point(x, y), ignoredNewVal, &boundingRect, colorDiff, colorDiff, cv::FLOODFILL_MASK_ONLY);
-				if (area > 1600 && area < 4000 && boundingRect.height > 10 && boundingRect.width > 10)
-				{
-					boundingRect = boundingRect + cv::Point(-1, -1);
-					cv::rectangle(img, boundingRect, cv::Scalar(0, 0, 0));
-				}
-			}
-		}
-	}
-
-}
 
 void BlockImageProcessor::startProcessImg(moodycamel::BlockingConcurrentQueue<BlockImgStruct>& readBlockImgQueue)
 {

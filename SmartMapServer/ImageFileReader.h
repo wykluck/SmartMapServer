@@ -24,10 +24,11 @@ public:
 	ImageFileReader();
 	virtual ~ImageFileReader();
 
-	ProcessResult readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox);
+	
+	ProcessResult readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox, const std::pair<int, int>& objSizeRange);
 
 private:
-	bool readCachedProcessResult(int xIndex, int yIndex, const std::string& cacheDirUtf8, int& imgType);
+	static void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, const std::pair<int, int>& objSizeRange);
 	static moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> s_readBlockImgQueue;
 	moodycamel::BlockingConcurrentQueue<cvGIS::BlockImageProcessor::BlockImgStruct> m_processedBlockImgQueue;
 

@@ -13,6 +13,7 @@
 #include <locale>
 #include <codecvt>
 #include <algorithm>
+#include <climits>
 #include "ServerSiteConfig.h"
 #include "ImageFileReader.h"
 #include "blockingconcurrentqueue.h"
@@ -94,12 +95,22 @@ int main(int argc, char* argv[])
 				int botY = std::stoi(bboxStrVec[3]);
 				bboxPtr = std::make_unique<cv::Rect2i>(cv::Rect2i(cv::Point2i(topX, topY), cv::Point2i(botX, botY)));
 			}
-			
 		}
 
+		std::pair<int, int> objSizeRange = std::make_pair<int, int>(INT_MAX, INT_MIN);
+		auto param_minObjSize= http_get_vars.find(U("minobjsize"));
+		if (param_minObjSize != end(http_get_vars))
+		{
+			objSizeRange.first = std::stoi(param_minObjSize->second);
+		}
+		auto param_maxObjSize = http_get_vars.find(U("maxobjsize"));
+		if (param_maxObjSize != end(http_get_vars))
+		{
+			objSizeRange.second = std::stoi(param_maxObjSize->second);
+		}
 
 		ImageFileReader imageReader;
-		auto processedRes = imageReader.readForProcessing(imageFilePathUtf8.c_str(), *bboxPtr.get());
+		auto processedRes = imageReader.readForProcessing(imageFilePathUtf8.c_str(), *bboxPtr.get(), objSizeRange);
 		http_response httpResponse;
 		if (processedRes.isSuccessful)
 		{

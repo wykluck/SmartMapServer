@@ -339,7 +339,6 @@ ol.source.ImageExport.prototype.setUrl = function(url) {
  */
 ol.source.ImageExport.prototype.updateParams = function(params) {
   ol.obj.assign(this.params_, params);
-  this.updateV13_();
   this.image_ = null;
   this.changed();
 };

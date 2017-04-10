@@ -49,8 +49,6 @@ namespace cvGIS {
 		~BlockImageProcessor();
 
 		void startProcessImg(moodycamel::BlockingConcurrentQueue<BlockImgStruct>& readBlockImgQueue);
-	
-		void BlockImageProcessor::postprocess(cv::Mat& img, const cv::Scalar& colorDiff = cv::Scalar::all(1));
 
 		static std::string getBlockFileCachePath(int xIndex, int yIndex, const std::string& cacheDirUtf8);
 

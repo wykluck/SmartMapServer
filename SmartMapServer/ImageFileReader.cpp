@@ -8,6 +8,7 @@
 #include "ImgDecoderFactory.h"
 #include <boost/filesystem.hpp>
 #include <opencv2/highgui.hpp>
+#include <opencv2/imgproc.hpp>
 
 using namespace cvGIS;
 using namespace boost::filesystem;
@@ -21,22 +22,32 @@ ImageFileReader::~ImageFileReader()
 {
 }
 
-bool ImageFileReader::readCachedProcessResult(int xIndex, int yIndex, const std::string& cacheDirUtf8, int& imgType)
+void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, const std::pair<int, int>& objSizeRange)
 {
-	std::string blockFileCachePath = BlockImageProcessor::getBlockFileCachePath(xIndex, yIndex, cacheDirUtf8);
-	if (exists(path(blockFileCachePath)))
+	cv::RNG rng = cv::theRNG();
+	cv::Mat mask(img.rows + 2, img.cols + 2, CV_8UC1, cv::Scalar::all(0));
+	cv::Rect boundingRect;
+	for (int y = 0; y < img.rows; y++)
 	{
-		BlockImageProcessor::BlockImgStruct processedBlockStruct(xIndex, yIndex);
-		processedBlockStruct.blockImg = cv::imread(blockFileCachePath);
-		imgType = processedBlockStruct.blockImg.type();
-		m_processedBlockImgQueue.enqueue(processedBlockStruct);
-		return true;
-	}
-	else
-		return false;
-}
+		for (int x = 0; x < img.cols; x++)
+		{
+			if (mask.at<uchar>(y + 1, x + 1) == 0)
+			{
+				cv::Scalar ignoredNewVal(0, 0, 0);
 
-ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox)
+				int area = cv::floodFill(img, mask, cv::Point(x, y), ignoredNewVal, &boundingRect, colorDiff, colorDiff, cv::FLOODFILL_MASK_ONLY);
+				if (area >= objSizeRange.first && area <= objSizeRange.second && boundingRect.height > 10 && boundingRect.width > 10)
+				{
+					boundingRect = boundingRect + cv::Point(-1, -1);
+					cv::rectangle(img, boundingRect, cv::Scalar(0, 0, 255));
+				}
+			}
+		}
+	}
+
+}
+ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox,
+	const std::pair<int, int>& objSizeRange)
 {
 	
 	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
@@ -121,9 +132,13 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 		param[1] = 95;
 		auto xBlockStart = startBlockX * gdalDecoderPtr->GetXBlockSize();
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
-		cv::imencode(".jpg", assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
-			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1),
-			processRes.resBuf, param);
+		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
+			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
+		if (objSizeRange.first < objSizeRange.second)
+		{
+			postprocess(resMat, cv::Scalar(2), objSizeRange);
+		}
+		cv::imencode(".jpg", resMat, processRes.resBuf, param);
 		return processRes;
 	}
 	else
