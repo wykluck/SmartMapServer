@@ -36,6 +36,9 @@
     <ClCompile Include="grfmt_gdal.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="MeanShiftSegmenation.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockImageProcessor.h">
@@ -54,6 +57,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="grfmt_gdal.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="MeanShiftSegmentation.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

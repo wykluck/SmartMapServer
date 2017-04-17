@@ -4,6 +4,7 @@
 #include <mutex>
 #include <opencv2/core.hpp>
 #include "blockingconcurrentqueue.h"
+#include "MeanShiftSegmentation.hpp"
 namespace cvGIS {
 	class BlockImageProcessor
 	{
@@ -65,6 +66,7 @@ namespace cvGIS {
 		std::size_t m_startedTimes;
 		std::condition_variable s_cv;
 		moodycamel::BlockingConcurrentQueue<BlockImgStruct>* m_pReadBlockImgQueue;
+		cv::Ptr<MeanShiftSegmentation> m_meanShiftSegPtr;
 
 		static std::shared_ptr<BlockImageProcessor> s_blockImgPtr;
 	};

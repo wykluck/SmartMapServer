@@ -69,7 +69,6 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 		int endBlockY = bbox.br().y % gdalDecoderPtr->GetYBlockSize() == 0 ? (bbox.br().y / gdalDecoderPtr->GetYBlockSize()) : (bbox.br().y / gdalDecoderPtr->GetYBlockSize() + 1);
 		
 		blockImgProcessorPtr->startProcessImg(s_readBlockImgQueue);
-		int imgType;
 		for (auto yIndex = startBlockY; yIndex <= endBlockY; yIndex++)
 			for (auto xIndex = startBlockX; xIndex <= endBlockX; xIndex++)
 			{
