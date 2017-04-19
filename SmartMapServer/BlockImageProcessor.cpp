@@ -72,11 +72,12 @@ void tryToSetOpenCLDevice()
 	//cv::ocl::Device(context.device(0)); //Here is where you change which GPU to use (e.g. 0 or 1)
 }
 
+
 BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::String& cacheDir)
 	:m_threadCount(threadCount), m_cacheDir(cacheDir), m_pReadBlockImgQueue(nullptr)
 {
 	tryToSetOpenCLDevice();
-	m_meanShiftSegPtr = createMeanShiftSegmentation(8, 5.5f, 20, true);
+	m_meanShiftSegPtr = createMeanShiftSegmentation(8, 10.0f, 50, true);
 	for (std::size_t i = 0; i < m_threadCount; i++)
 	{
 		m_processThreadVec.push_back(std::thread(
@@ -85,7 +86,6 @@ BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::Stri
 			while (1)
 			{
 				BlockImgStruct inBlockStruct;
-				cv::UMat hsvBlockImg, meanshifBlockImg;
 				cv::Mat outBlockImg;
 				bool res = false;
 				{

@@ -46,7 +46,15 @@ void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, con
 	}
 
 }
-ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox,
+
+std::string ImageFileReader::readForMetaData(const cv::String& datasetFilePath)
+{
+	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
+	auto imageMetaData = gdalDecoderPtr->getMetaData();
+	return imageMetaData.ToJsonString();
+}
+
+ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::String& datasetFilePath, const cv::Rect2i& bbox,
 	const std::pair<int, int>& objSizeRange)
 {
 	
@@ -60,7 +68,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForProcessing(const cv::Stri
 	//TDDO: only check block counts
 	std::size_t totalBlockCounts = 0;
 
-	if (gdalDecoderPtr->GetXBlockSize() > 1 && gdalDecoderPtr->GetYBlockSize() > 1)
+	if (gdalDecoderPtr->supportBlockRead())
 	{
 		//calculate the required blocks that need to process
 		int startBlockX = bbox.tl().x / gdalDecoderPtr->GetXBlockSize();

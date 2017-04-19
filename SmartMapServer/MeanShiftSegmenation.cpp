@@ -1981,7 +1981,7 @@ namespace {
 				NewOptimizedFilter1(luv, state);
 
 			Connect(state);
-			FuseRegions(state);
+			//FuseRegions(state);
 
 			segmented.create(src.rows, src.cols, inp.type());
 			auto mat = segmented.getMat();

@@ -150,19 +150,31 @@
     <ClCompile Include="BlockImageProcessor.cpp" />
     <ClCompile Include="grfmt_base.cpp" />
     <ClCompile Include="grfmt_gdal.cpp" />
+    <ClCompile Include="ImageMetaData.cpp" />
     <ClCompile Include="ImgDecoderFactory.cpp" />
     <ClCompile Include="ImageFileReader.cpp" />
     <ClCompile Include="Main.cpp" />
     <ClCompile Include="MeanShiftSegmenation.cpp" />
+    <ClCompile Include="RequestController.cpp" />
     <ClCompile Include="ServerSiteConfig.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockImageProcessor.h" />
     <ClInclude Include="grfmt_base.hpp" />
     <ClInclude Include="grfmt_gdal.hpp" />
+    <ClInclude Include="ImageMetaData.h" />
     <ClInclude Include="ImgDecoderFactory.h" />
     <ClInclude Include="ImageFileReader.h" />
     <ClInclude Include="MeanShiftSegmentation.hpp" />
+    <ClInclude Include="NeutralFormatTemplates\NFCommonDef.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFComparer.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFExceptions.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFIterator.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFJsonElement.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFParser.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFSerializer.h" />
+    <ClInclude Include="NeutralFormatTemplates\NFXmlElement.h" />
+    <ClInclude Include="RequestController.h" />
     <ClInclude Include="ServerSiteConfig.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

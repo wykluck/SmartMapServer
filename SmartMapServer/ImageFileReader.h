@@ -24,8 +24,8 @@ public:
 	ImageFileReader();
 	virtual ~ImageFileReader();
 
-	
-	ProcessResult readForProcessing(const cv::String& datasetFilePath, const cv::Rect2i& bbox, const std::pair<int, int>& objSizeRange);
+	std::string readForMetaData(const cv::String& datasetFilePath);
+	ProcessResult readForSegmentation(const cv::String& datasetFilePath, const cv::Rect2i& bbox, const std::pair<int, int>& objSizeRange);
 
 private:
 	static void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, const std::pair<int, int>& objSizeRange);

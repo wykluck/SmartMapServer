@@ -45,7 +45,7 @@
 
 // Our Header
 #include "grfmt_gdal.hpp"
-
+#include <ogr_spatialref.h>
 
 /// C++ Standard Libraries
 #include <iostream>
@@ -714,6 +714,30 @@ bool GdalDecoder::readHeader(){
 
 	m_xBlocks = (m_dataset->GetRasterXSize() + m_xBlockSize - 1) / m_xBlockSize;
 	m_yBlocks = (m_dataset->GetRasterYSize() + m_yBlockSize - 1) / m_yBlockSize;
+
+	//extract cell size
+	const char* wktString = m_dataset->GetProjectionRef();
+	double unitInMeters = 1.0;
+	m_imageMetadata.width = m_width;
+	m_imageMetadata.height = m_height;
+	if (wktString != nullptr)
+	{
+		OGRSpatialReference ogrSR(wktString);
+		unitInMeters = ogrSR.GetLinearUnits(NULL);
+		double geoTransformParam[6];
+		if (m_dataset->GetGeoTransform(geoTransformParam) == CE_None)
+		{
+			if (geoTransformParam[2] == 0 && geoTransformParam[4] == 0)
+			{
+				m_imageMetadata.pixelWidthInMeters = geoTransformParam[1] * unitInMeters;
+				m_imageMetadata.pixelHeightInMeters = geoTransformParam[5] * unitInMeters;
+			}
+			m_imageMetadata.originX = geoTransformParam[0];
+			m_imageMetadata.originY = geoTransformParam[3];
+		}
+		m_imageMetadata.isGeoSpatialInfoValid = true;
+	}
+	
 
     return true;
 }

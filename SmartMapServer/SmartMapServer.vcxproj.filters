@@ -13,6 +13,9 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
+    <Filter Include="Header Files\NeutralFormatTemplates">
+      <UniqueIdentifier>{4a4cd9b6-4cf9-47d0-ae4d-f0870f24f2c9}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -39,6 +42,12 @@
     <ClCompile Include="MeanShiftSegmenation.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="ImageMetaData.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="RequestController.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="BlockImageProcessor.h">
@@ -60,6 +69,36 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="MeanShiftSegmentation.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ImageMetaData.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFCommonDef.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFComparer.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFExceptions.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFIterator.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFJsonElement.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFParser.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFSerializer.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="NeutralFormatTemplates\NFXmlElement.h">
+      <Filter>Header Files\NeutralFormatTemplates</Filter>
+    </ClInclude>
+    <ClInclude Include="RequestController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

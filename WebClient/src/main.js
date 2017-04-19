@@ -23,7 +23,7 @@ var layers = [
 	new ol.layer.Image({
 	  source: new ol.source.ImageExport({
 		url: 'http://localhost:12345/image',
-		params: {'LAYER': '04_072_uncompressed_15759_15756.tif'},
+		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
 		projection: projection		
 	  })
 	})
@@ -50,7 +50,7 @@ app.map = new ol.Map({
 	layers: layers,
 	target: 'map',
 	view: new ol.View({
-	  center: [7879, -7878],
+	  center: [16501, -30350],
 	  resolution: 1,
 	  projection: projection
 	})
@@ -61,7 +61,14 @@ app.map = new ol.Map({
       min: 0,
       max: 5000,
       values: [ 500, 2000 ],
-      slide: function( event, ui ) {
+	  create: function( event, ui ) {
+        //$( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
+		layers[0].getSource().updateParams({
+			minObjSize: ui.values[0],
+			maxObjSize: ui.values[1]
+		});
+      },
+      stop: function( event, ui ) {
         //$( "#amount" ).val( "$" + ui.values[ 0 ] + " - $" + ui.values[ 1 ] );
 		layers[0].getSource().updateParams({
 			minObjSize: ui.values[0],

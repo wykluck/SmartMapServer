@@ -43,7 +43,7 @@
 
 /// OpenCV FMT Base Type
 #include "grfmt_base.hpp"
-
+#include "ImageMetaData.h"
 /// Macro to make sure we specified GDAL in CMake
 
 /// C++ Libraries
@@ -133,7 +133,10 @@ class GdalDecoder : public BaseImageDecoder{
 
 		bool supportBlockRead() { return m_supportBlockRead; };
 
+		const ImageMetaData& getMetaData() { return m_imageMetadata; };
+
 		bool readBlockData(int xBlockIndex, int yBlockIndex, cv::Mat& blockImg);
+
 
 		//bool readPartialData()
 
@@ -179,6 +182,8 @@ class GdalDecoder : public BaseImageDecoder{
 		int m_xBlocks;
 		int m_yBlocks;
 		bool m_supportBlockRead;
+
+		ImageMetaData m_imageMetadata;
 
 }; /// End of GdalDecoder Class
 

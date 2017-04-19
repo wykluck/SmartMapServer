@@ -10,16 +10,15 @@
 #include <thread>
 #include <chrono>
 #include <ctime>
-#include <locale>
-#include <codecvt>
+
 #include <algorithm>
 #include <climits>
 #include "ServerSiteConfig.h"
-#include "ImageFileReader.h"
+
 #include "blockingconcurrentqueue.h"
 #include "BlockImageProcessor.h"
-#include <opencv2/core/types.hpp>
-#include <boost/algorithm/string.hpp>
+
+#include "RequestController.h"
 
 using namespace utility;                    // Common utilities like string conversions
 using namespace web;                        // Common features like URIs.
@@ -30,24 +29,7 @@ using namespace web::http::experimental::listener;
 using namespace std;
 using namespace cvGIS;
 
-
-std::string read_file(std::string filename) {
-	ifstream inFile;
-	inFile.open(filename);
-
-	std::stringstream strStream;
-	strStream << inFile.rdbuf();
-	string str = strStream.str();
-	return str;
-}
-/*
-boost::format get_template(std::string filename) {
-	std::string content = read_file(filename);
-	boost::format con = boost::format(content);
-	return con;
-}
-*/
-
+cvGIS::RequestController requestController;
 
 int main(int argc, char* argv[])
 {
@@ -57,74 +39,11 @@ int main(int argc, char* argv[])
 
 	listener.support(methods::GET, [count](http_request request) mutable {
 		
-		//decode the url and convert to lower case
-		utility::string_t decodedUrlString = web::uri::decode(request.request_uri().to_string());
-		std::transform(decodedUrlString.begin(), decodedUrlString.end(), decodedUrlString.begin(), ::tolower);
-		web::uri decodedUri(decodedUrlString);
-		std::wcout << "GET " << decodedUrlString << std::endl;
-
-		//url is supposed to be http://hostname:port/image/<imagePath>/export?bbox=<xmin>,<ymin>,<xmax>,<ymax>&width=<width>&height=<height>&style=<style>&format=<imageformat>
 		
-		//get image file physical path
-		auto http_path_vec = uri::split_path(decodedUri.path());
-		utility::string_t imageFilePath = ServerSiteConfig::getImageRootDir();
-		if (http_path_vec.size() == 3 && http_path_vec[0] == U("image") && http_path_vec[2] == U("export"))
-		{
-			imageFilePath += U("\\");
-			imageFilePath += http_path_vec[1];
-		}
+		
+		requestController.handleRequest();
 
 		
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-		std::string imageFilePathUtf8 = convert.to_bytes(imageFilePath.c_str());
-
-
-		auto http_get_vars = uri::split_query(decodedUri.query());
-		auto param_bbox = http_get_vars.find(U("bbox"));
-		std::unique_ptr<cv::Rect2i> bboxPtr;
-		if (param_bbox != end(http_get_vars))
-		{
-			vector<string> bboxStrVec;
-			boost::split(bboxStrVec, param_bbox->second, boost::is_any_of(","));
-			if (bboxStrVec.size() == 4)
-			{
-				//image coordinates tl.y < br.y
-				int topX = std::stoi(bboxStrVec[0]);
-				int topY = std::stoi(bboxStrVec[1]);
-				int botX = std::stoi(bboxStrVec[2]);
-				int botY = std::stoi(bboxStrVec[3]);
-				bboxPtr = std::make_unique<cv::Rect2i>(cv::Rect2i(cv::Point2i(topX, topY), cv::Point2i(botX, botY)));
-			}
-		}
-
-		std::pair<int, int> objSizeRange = std::make_pair<int, int>(INT_MAX, INT_MIN);
-		auto param_minObjSize= http_get_vars.find(U("minobjsize"));
-		if (param_minObjSize != end(http_get_vars))
-		{
-			objSizeRange.first = std::stoi(param_minObjSize->second);
-		}
-		auto param_maxObjSize = http_get_vars.find(U("maxobjsize"));
-		if (param_maxObjSize != end(http_get_vars))
-		{
-			objSizeRange.second = std::stoi(param_maxObjSize->second);
-		}
-
-		ImageFileReader imageReader;
-		auto processedRes = imageReader.readForProcessing(imageFilePathUtf8.c_str(), *bboxPtr.get(), objSizeRange);
-		http_response httpResponse;
-		if (processedRes.isSuccessful)
-		{
-			httpResponse.set_body(processedRes.resBuf);
-			httpResponse.headers().add(U("Content-Type"), "image/jpeg");
-			httpResponse.set_status_code(http::status_codes::OK);
-		}
-		else
-		{
-			httpResponse.set_body("Error happened when trying to process the result");
-			httpResponse.headers().add(U("Content-Type"), "text/plain");
-			httpResponse.set_status_code(http::status_codes::InternalError);
-		}
-		request.reply(httpResponse);
 	});
 
 	listener.open().wait();
