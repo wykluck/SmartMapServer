@@ -1,5 +1,4 @@
 #include <cpprest/http_client.h>
-#include <cpprest/filestream.h>
 #include <cpprest/http_listener.h>
 #include <cpprest/json.h>                       // JSON library
 #include <cpprest/uri.h>  
@@ -39,9 +38,7 @@ int main(int argc, char* argv[])
 
 	listener.support(methods::GET, [count](http_request request) mutable {
 		
-		
-		
-		requestController.handleRequest();
+		requestController.handleRequest(request);
 
 		
 	});

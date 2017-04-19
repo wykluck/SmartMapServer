@@ -205,7 +205,7 @@ ol.source.ImageExport.prototype.getImageInternal = function(extent, resolution, 
   }
 
   var params = {
-    'REQUEST': 'export',
+    'REQUEST': 'segment',
     'FORMAT': 'image/png'
   };
   ol.obj.assign(params, this.params_);

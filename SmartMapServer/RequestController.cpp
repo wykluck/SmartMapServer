@@ -3,7 +3,6 @@
 #include "ImageFileReader.h"
 #include <locale>
 #include <codecvt>
-#include <cpprest/http_client.h>
 #include <cpprest/filestream.h>
 #include <opencv2/core/types.hpp>
 #include <boost/algorithm/string.hpp>
@@ -36,7 +35,7 @@ void RequestController::handleRequest(const http_request &request)
 	//get image file physical path
 	auto http_path_vec = uri::split_path(decodedUri.path());
 	utility::string_t imageFilePath = ServerSiteConfig::getImageRootDir();
-	if (http_path_vec.size() == 3 && http_path_vec[0] == U("image") && http_path_vec[2] == U("segment"))
+	if (http_path_vec.size() == 3 && http_path_vec[0] == U("image"))
 	{
 		imageFilePath += U("\\");
 		imageFilePath += http_path_vec[1];
@@ -48,19 +47,20 @@ void RequestController::handleRequest(const http_request &request)
 
 	if (http_path_vec[2] == U("segment"))
 	{
-		handleSegmentRequest(decodedUri.query());
+		handleSegmentRequest(decodedUri.query(), request, imageFilePathUtf8);
 	}
 	else if (http_path_vec[2] == U("export"))
 	{
-		handleExportRequest(decodedUri.query());
+		handleExportRequest(decodedUri.query(), request, imageFilePathUtf8);
 	}
 	else if (http_path_vec[2] == U("metadata"))
 	{
-		handleExportRequest(decodedUri.query());
+		handleMetaDataRequest(decodedUri.query(), request, imageFilePathUtf8);
 	}
 }
 
-void RequestController::handleSegmentRequest(const utility::string_t& queryString)
+void RequestController::handleSegmentRequest(const utility::string_t& queryString, const http_request &request,
+	const std::string& imageFilePathUtf8)
 {
 	auto http_get_vars = uri::split_query(queryString);
 	auto param_bbox = http_get_vars.find(U("bbox"));
@@ -110,12 +110,20 @@ void RequestController::handleSegmentRequest(const utility::string_t& queryStrin
 	request.reply(httpResponse);
 }
 
-void RequestController::handleMetaDataRequest(const utility::string_t& queryString)
+void RequestController::handleMetaDataRequest(const utility::string_t& queryString, const http_request &request,
+	const std::string& imageFilePathUtf8)
 {
-
+	ImageFileReader imageReader;
+	auto metadataJsonString = imageReader.readForMetaData(imageFilePathUtf8.c_str());
+	http_response httpResponse;
+	httpResponse.set_body(metadataJsonString.c_str());
+	httpResponse.headers().add(U("Content-Type"), "application/json");
+	httpResponse.set_status_code(http::status_codes::OK);
+	request.reply(httpResponse);
 }
 
-void RequestController::handleExportRequest(const utility::string_t& queryString)
+void RequestController::handleExportRequest(const utility::string_t& queryString, const http_request &request,
+	const std::string& imageFilePathUtf8)
 {
 
 }
