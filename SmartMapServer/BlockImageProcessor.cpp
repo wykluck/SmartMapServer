@@ -73,6 +73,65 @@ void tryToSetOpenCLDevice()
 }
 
 
+void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, cv::Mat& edgeImg)
+{
+	edgeImg.create(labelImg.size(), CV_8UC4);
+	edgeImg = cv::Scalar(0, 0, 0, 0);
+
+	auto labelType = labelImg.type();
+	cv::Mat labelImgWithBorder;
+	cv::copyMakeBorder(labelImg, labelImgWithBorder, 1, 1, 1, 1, cv::BORDER_REPLICATE);
+
+	int i, j;
+	for (i = 1; i < labelImgWithBorder.rows - 1; ++i)
+	{
+		for (j = 1; j < labelImgWithBorder.cols - 1; ++j)
+		{
+			auto p = labelImgWithBorder.at<cv::Vec3b>(i, j);
+			//if (p != labelImgWithBorder.at<cv::Vec3b>(i - 1, j - 1))
+			//{
+			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+			//	continue;
+			//}
+			if (p != labelImgWithBorder.at<cv::Vec3b>(i - 1, j))
+			{
+				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+				continue;
+			}
+			//if (p != labelImgWithBorder.at<cv::Vec3b>(i - 1, j + 1))
+			//{
+			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+			//	continue;
+			//}
+			if (p != labelImgWithBorder.at<cv::Vec3b>(i, j - 1))
+			{
+				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+				continue;
+			}
+			if (p != labelImgWithBorder.at<cv::Vec3b>(i, j + 1))
+			{
+				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+				continue;
+			}
+			//if (p != labelImgWithBorder.at<cv::Vec3b>(i + 1, j - 1))
+			//{
+			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+			//	continue;
+			//}
+			if (p != labelImgWithBorder.at<cv::Vec3b>(i + 1, j))
+			{
+				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+				continue;
+			}
+			//if (p != labelImgWithBorder.at<cv::Vec3b>(i + 1, j + 1))
+			//{
+			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
+			//	continue;
+			//}
+		}
+	}
+}
+
 BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::String& cacheDir)
 	:m_threadCount(threadCount), m_cacheDir(cacheDir), m_pReadBlockImgQueue(nullptr)
 {
@@ -86,7 +145,7 @@ BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::Stri
 			while (1)
 			{
 				BlockImgStruct inBlockStruct;
-				cv::Mat outBlockImg;
+				cv::Mat outBlockImg, labelBlockImg;
 				bool res = false;
 				{
 					std::unique_lock<std::mutex> lock(m_cvMutex);
@@ -111,16 +170,18 @@ BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::Stri
 					}
 					else if (inBlockStruct.type == BlockImgStructType::BlockForProcess)
 					{
-						m_meanShiftSegPtr->processImage(inBlockStruct.blockImg, outBlockImg);
-						processedBlockStruct.blockImg = outBlockImg;
+						m_meanShiftSegPtr->processImage(inBlockStruct.blockImg, outBlockImg, labelBlockImg);	
+						//extract edge on the labelBlockImg
+						drawEdgeOnLabelImage(outBlockImg, cv::Vec4b(0, 0, 255, 255), processedBlockStruct.blockImg);
+						//then write the result to the output tile cache directory
+						cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir),
+							processedBlockStruct.blockImg);
 						//first push the processedBlockStruct to its corresponding output queue
 						while (!inBlockStruct.pQueueForOutput->enqueue(processedBlockStruct))
 						{
 							std::this_thread::sleep_for(std::chrono::milliseconds(50));
 						}
-						//then write the result to the output tile cache directory
-						cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir),
-							outBlockImg);
+					
 					}
 					else
 					{
@@ -153,7 +214,7 @@ std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, c
 	outputFilePath += std::to_string(xIndex);
 	outputFilePath += "_";
 	outputFilePath += std::to_string(yIndex);
-	outputFilePath += ".jpg";
+	outputFilePath += ".png";
 	return outputFilePath;
 }
 

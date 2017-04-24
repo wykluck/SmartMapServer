@@ -6,6 +6,7 @@ goog.require('ol.layer.Image');
 goog.require('ol.proj.Projection');
 goog.require('ol.control.MousePosition');
 goog.require('ol.source.ImageExport');
+goog.require('ol.source.ImageSegment');
 
 var projection = new ol.proj.Projection({
         code: 'CRS:1',
@@ -26,8 +27,17 @@ var layers = [
 		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
 		projection: projection		
 	  })
+	}),
+	new ol.layer.Image({
+	  source: new ol.source.ImageSegment({
+		url: 'http://localhost:12345/image',
+		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
+		projection: projection		
+	  })
 	})
 ];
+layers[0].setVisible(true);
+layers[1].setVisible(true);
 
 var mousePositionControl = 
 	new ol.control.MousePosition({
@@ -56,6 +66,7 @@ app.map = new ol.Map({
 	})
 });
 
+/*
  $( "#object-size-ranger" ).slider({
       range: true,
       min: 0,
@@ -76,4 +87,4 @@ app.map = new ol.Map({
 		});
       }
     });
-
+*/

@@ -31,7 +31,7 @@ void RequestController::handleRequest(const http_request &request)
 	web::uri decodedUri(decodedUrlString);
 	std::wcout << "GET " << decodedUrlString << std::endl;
 
-	//url is supposed to be http://hostname:port/image/<imagePath>/segment?bbox=<xmin>,<ymin>,<xmax>,<ymax>&width=<width>&height=<height>&style=<style>&format=<imageformat>
+	//url is supposed to be http://hostname:port/image/<imagePath>/<action>
 	//get image file physical path
 	auto http_path_vec = uri::split_path(decodedUri.path());
 	utility::string_t imageFilePath = ServerSiteConfig::getImageRootDir();
@@ -59,10 +59,8 @@ void RequestController::handleRequest(const http_request &request)
 	}
 }
 
-void RequestController::handleSegmentRequest(const utility::string_t& queryString, const http_request &request,
-	const std::string& imageFilePathUtf8)
+std::unique_ptr<cv::Rect2i> RequestController::extractBBoxParam(const std::map<utility::string_t, utility::string_t>& http_get_vars)
 {
-	auto http_get_vars = uri::split_query(queryString);
 	auto param_bbox = http_get_vars.find(U("bbox"));
 	std::unique_ptr<cv::Rect2i> bboxPtr;
 	if (param_bbox != end(http_get_vars))
@@ -79,6 +77,32 @@ void RequestController::handleSegmentRequest(const utility::string_t& queryStrin
 			bboxPtr = std::make_unique<cv::Rect2i>(cv::Rect2i(cv::Point2i(topX, topY), cv::Point2i(botX, botY)));
 		}
 	}
+	return bboxPtr;
+}
+
+void sendProcessResult(const ImageFileReader::ProcessResult& processRes, const http_request &request)
+{
+	http_response httpResponse;
+	if (processRes.isSuccessful)
+	{
+		httpResponse.set_body(processRes.resBuf);
+		httpResponse.headers().add(U("Content-Type"), "image/jpeg");
+		httpResponse.set_status_code(http::status_codes::OK);
+	}
+	else
+	{
+		httpResponse.set_body("Error happened when trying to process the result");
+		httpResponse.set_status_code(http::status_codes::InternalError);
+	}
+	request.reply(httpResponse);
+}
+
+void RequestController::handleSegmentRequest(const utility::string_t& queryString, const http_request &request,
+	const std::string& imageFilePathUtf8)
+{
+	// url should be http://hostname:port/image/<imagePath>/segment?bbox=<xmin>,<ymin>,<xmax>,<ymax>&width=<width>&height=<height>&style=<style>&format=<imageformat>
+	auto http_get_vars = uri::split_query(queryString);
+	auto bboxPtr = extractBBoxParam(http_get_vars);
 
 	std::pair<int, int> objSizeRange = std::make_pair<int, int>(INT_MAX, INT_MIN);
 	auto param_minObjSize = http_get_vars.find(U("minobjsize"));
@@ -93,31 +117,18 @@ void RequestController::handleSegmentRequest(const utility::string_t& queryStrin
 	}
 
 	ImageFileReader imageReader;
-	auto processedRes = imageReader.readForSegmentation(imageFilePathUtf8.c_str(), *bboxPtr.get(), objSizeRange);
-	http_response httpResponse;
-	if (processedRes.isSuccessful)
-	{
-		httpResponse.set_body(processedRes.resBuf);
-		httpResponse.headers().add(U("Content-Type"), "image/jpeg");
-		httpResponse.set_status_code(http::status_codes::OK);
-	}
-	else
-	{
-		httpResponse.set_body("Error happened when trying to process the result");
-		httpResponse.headers().add(U("Content-Type"), "text/plain");
-		httpResponse.set_status_code(http::status_codes::InternalError);
-	}
-	request.reply(httpResponse);
+	auto processRes = imageReader.readForSegmentation(imageFilePathUtf8.c_str(), *bboxPtr.get(), objSizeRange);
+	sendProcessResult(processRes, request);
 }
 
 void RequestController::handleMetaDataRequest(const utility::string_t& queryString, const http_request &request,
 	const std::string& imageFilePathUtf8)
 {
+	// url should be http://hostname:port/image/<imagePath>/metadata
 	ImageFileReader imageReader;
 	auto metadataJsonString = imageReader.readForMetaData(imageFilePathUtf8.c_str());
 	http_response httpResponse;
-	httpResponse.set_body(metadataJsonString.c_str());
-	httpResponse.headers().add(U("Content-Type"), "application/json");
+	httpResponse.set_body(metadataJsonString.c_str(), "application/json; charset=utf-8");
 	httpResponse.set_status_code(http::status_codes::OK);
 	request.reply(httpResponse);
 }
@@ -125,5 +136,11 @@ void RequestController::handleMetaDataRequest(const utility::string_t& queryStri
 void RequestController::handleExportRequest(const utility::string_t& queryString, const http_request &request,
 	const std::string& imageFilePathUtf8)
 {
+	// url should be http://hostname:port/image/<imagePath>/export?bbox=<xmin>,<ymin>,<xmax>,<ymax>&width=<width>&height=<height>&style=<style>&format=<imageformat>
+	auto http_get_vars = uri::split_query(queryString);
+	auto bboxPtr = extractBBoxParam(http_get_vars);
 
+	ImageFileReader imageReader;
+	auto processRes = imageReader.readForExport(imageFilePathUtf8.c_str(), *bboxPtr.get());
+	sendProcessResult(processRes, request);
 }

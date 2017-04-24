@@ -1,6 +1,6 @@
 // FIXME cannot be shared between maps with different projections
 
-goog.provide('ol.source.ImageExport');
+goog.provide('ol.source.ImageSegment');
 
 goog.require('ol');
 goog.require('ol.Image');
@@ -23,10 +23,10 @@ goog.require('ol.uri');
  * @constructor
  * @fires ol.source.Image.Event
  * @extends {ol.source.Image}
- * @param {olx.source.ImageExportOptions=} opt_options Options.
+ * @param {olx.source.ImageSegmentOptions=} opt_options Options.
  * @api
  */
-ol.source.ImageExport = function(opt_options) {
+ol.source.ImageSegment = function(opt_options) {
 
   var options = opt_options || {};
 
@@ -102,7 +102,7 @@ ol.source.ImageExport = function(opt_options) {
   this.ratio_ = options.ratio !== undefined ? options.ratio : 1.5;
 
 };
-ol.inherits(ol.source.ImageExport, ol.source.Image);
+ol.inherits(ol.source.ImageSegment, ol.source.Image);
 
 
 /**
@@ -110,7 +110,7 @@ ol.inherits(ol.source.ImageExport, ol.source.Image);
  * @type {ol.Size}
  * @private
  */
-ol.source.ImageExport.GETFEATUREINFO_IMAGE_SIZE_ = [101, 101];
+ol.source.ImageSegment.GETFEATUREINFO_IMAGE_SIZE_ = [101, 101];
 
 
 /**
@@ -127,14 +127,14 @@ ol.source.ImageExport.GETFEATUREINFO_IMAGE_SIZE_ = [101, 101];
  * @return {string|undefined} GetFeatureInfo URL.
  * @api
  
-ol.source.ImageExport.prototype.getGetFeatureInfoUrl = function(coordinate, resolution, projection, params) {
+ol.source.ImageSegment.prototype.getGetFeatureInfoUrl = function(coordinate, resolution, projection, params) {
   if (this.url_ === undefined) {
     return undefined;
   }
 
   var extent = ol.extent.getForViewAndSize(
       coordinate, resolution, 0,
-      ol.source.ImageExport.GETFEATUREINFO_IMAGE_SIZE_);
+      ol.source.ImageSegment.GETFEATUREINFO_IMAGE_SIZE_);
 
   var baseParams = {
     'SERVICE': 'WMS',
@@ -152,7 +152,7 @@ ol.source.ImageExport.prototype.getGetFeatureInfoUrl = function(coordinate, reso
   baseParams[this.v13_ ? 'J' : 'Y'] = y;
 
   return this.getRequestUrl_(
-      extent, ol.source.ImageExport.GETFEATUREINFO_IMAGE_SIZE_,
+      extent, ol.source.ImageSegment.GETFEATUREINFO_IMAGE_SIZE_,
       1, ol.proj.get(projection), baseParams);
 };
 */
@@ -163,7 +163,7 @@ ol.source.ImageExport.prototype.getGetFeatureInfoUrl = function(coordinate, reso
  * @return {Object} Params.
  * @api
  */
-ol.source.ImageExport.prototype.getParams = function() {
+ol.source.ImageSegment.prototype.getParams = function() {
   return this.params_;
 };
 
@@ -171,7 +171,7 @@ ol.source.ImageExport.prototype.getParams = function() {
 /**
  * @inheritDoc
  */
-ol.source.ImageExport.prototype.getImageInternal = function(extent, resolution, pixelRatio, projection) {
+ol.source.ImageSegment.prototype.getImageInternal = function(extent, resolution, pixelRatio, projection) {
 
   if (this.url_ === undefined) {
     return null;
@@ -205,7 +205,7 @@ ol.source.ImageExport.prototype.getImageInternal = function(extent, resolution, 
   }
 
   var params = {
-    'REQUEST': 'export',
+    'REQUEST': 'segment',
     'FORMAT': 'image/png'
   };
   ol.obj.assign(params, this.params_);
@@ -233,7 +233,7 @@ ol.source.ImageExport.prototype.getImageInternal = function(extent, resolution, 
  * @return {ol.ImageLoadFunctionType} The image load function.
  * @api
  */
-ol.source.ImageExport.prototype.getImageLoadFunction = function() {
+ol.source.ImageSegment.prototype.getImageLoadFunction = function() {
   return this.imageLoadFunction_;
 };
 
@@ -247,7 +247,7 @@ ol.source.ImageExport.prototype.getImageLoadFunction = function() {
  * @return {string} Request URL.
  * @private
  */
-ol.source.ImageExport.prototype.getRequestUrl_ = function(extent, size, params) {
+ol.source.ImageSegment.prototype.getRequestUrl_ = function(extent, size, params) {
 
   ol.asserts.assert(this.url_ !== undefined, 9); // `url` must be configured or set using `#setUrl()`
   
@@ -290,7 +290,8 @@ ol.source.ImageExport.prototype.getRequestUrl_ = function(extent, size, params) 
   tempExtent[1] = -tempExtent[3];
   tempExtent[3] = -tempY;
   params['BBOX'] = tempExtent.join(',');
-
+  //TODO: can probably add color and minObjSize and maxObjSize parameters.
+  
   return ol.uri.appendParams(/** @type {string} */ (tempUrl), params);
 };
 
@@ -300,7 +301,7 @@ ol.source.ImageExport.prototype.getRequestUrl_ = function(extent, size, params) 
  * @return {string|undefined} URL.
  * @api
  */
-ol.source.ImageExport.prototype.getUrl = function() {
+ol.source.ImageSegment.prototype.getUrl = function() {
   return this.url_;
 };
 
@@ -310,7 +311,7 @@ ol.source.ImageExport.prototype.getUrl = function() {
  * @param {ol.ImageLoadFunctionType} imageLoadFunction Image load function.
  * @api
  */
-ol.source.ImageExport.prototype.setImageLoadFunction = function(
+ol.source.ImageSegment.prototype.setImageLoadFunction = function(
     imageLoadFunction) {
   this.image_ = null;
   this.imageLoadFunction_ = imageLoadFunction;
@@ -323,7 +324,7 @@ ol.source.ImageExport.prototype.setImageLoadFunction = function(
  * @param {string|undefined} url URL.
  * @api
  */
-ol.source.ImageExport.prototype.setUrl = function(url) {
+ol.source.ImageSegment.prototype.setUrl = function(url) {
   if (url != this.url_) {
     this.url_ = url;
     this.image_ = null;
@@ -337,7 +338,7 @@ ol.source.ImageExport.prototype.setUrl = function(url) {
  * @param {Object} params Params.
  * @api
  */
-ol.source.ImageExport.prototype.updateParams = function(params) {
+ol.source.ImageSegment.prototype.updateParams = function(params) {
   ol.obj.assign(this.params_, params);
   this.image_ = null;
   this.changed();

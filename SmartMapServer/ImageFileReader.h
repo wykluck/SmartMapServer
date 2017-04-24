@@ -26,6 +26,7 @@ public:
 
 	std::string readForMetaData(const cv::String& datasetFilePath);
 	ProcessResult readForSegmentation(const cv::String& datasetFilePath, const cv::Rect2i& bbox, const std::pair<int, int>& objSizeRange);
+	ProcessResult readForExport(const cv::String& datasetFilePath, const cv::Rect2i& bbox);
 
 private:
 	static void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, const std::pair<int, int>& objSizeRange);

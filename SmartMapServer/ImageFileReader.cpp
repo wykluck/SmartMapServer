@@ -54,6 +54,62 @@ std::string ImageFileReader::readForMetaData(const cv::String& datasetFilePath)
 	return imageMetaData.ToJsonString();
 }
 
+ImageFileReader::ProcessResult ImageFileReader::readForExport(const cv::String& datasetFilePath, const cv::Rect2i& bbox)
+{
+	//TODO: not implemented.
+	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
+	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
+	std::string cacheDirUtf8 = convert.to_bytes(ServerSiteConfig::getImageCacheDir().c_str());
+
+	
+	std::unique_ptr<cv::Mat> assembledImagePtr;
+
+	if (gdalDecoderPtr->supportBlockRead())
+	{
+		//calculate the required blocks that need to process
+		int startBlockX = bbox.tl().x / gdalDecoderPtr->GetXBlockSize();
+		int startBlockY = bbox.tl().y / gdalDecoderPtr->GetYBlockSize();
+		int endBlockX = bbox.br().x % gdalDecoderPtr->GetXBlockSize() == 0 ? (bbox.br().x / gdalDecoderPtr->GetXBlockSize()) : (bbox.br().x / gdalDecoderPtr->GetXBlockSize() + 1);
+		int endBlockY = bbox.br().y % gdalDecoderPtr->GetYBlockSize() == 0 ? (bbox.br().y / gdalDecoderPtr->GetYBlockSize()) : (bbox.br().y / gdalDecoderPtr->GetYBlockSize() + 1);
+
+		//wait to reassemble the processed blocks
+		int assembleImageRows = (endBlockY - startBlockY + 1) * gdalDecoderPtr->GetYBlockSize();
+		int assembleImageCols = (endBlockX - startBlockX + 1) * gdalDecoderPtr->GetXBlockSize();
+		cv::Mat readBlockImg;
+		for (auto yIndex = startBlockY; yIndex <= endBlockY; yIndex++)
+			for (auto xIndex = startBlockX; xIndex <= endBlockX; xIndex++)
+			{
+				if (gdalDecoderPtr->readBlockData(xIndex, yIndex, readBlockImg))
+				{
+					if (!assembledImagePtr)
+					{
+						assembledImagePtr.reset(new cv::Mat(assembleImageRows, assembleImageCols, readBlockImg.type()));
+					}
+					int xStart = (xIndex - startBlockX) * gdalDecoderPtr->GetXBlockSize();
+					int yStart = (yIndex - startBlockY) * gdalDecoderPtr->GetYBlockSize();
+					readBlockImg.copyTo((*assembledImagePtr)(cv::Rect(xStart, yStart, readBlockImg.cols, readBlockImg.rows)));
+				}
+				else
+				{
+					printf("Error happens when reading block data at (%d, %d)", yIndex, xIndex);
+				}
+			}
+
+		
+		//compress the reassembled image to jpg and send the response back
+		ProcessResult processRes(true);
+		std::vector<int> param = std::vector<int>(2);
+		auto xBlockStart = startBlockX * gdalDecoderPtr->GetXBlockSize();
+		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
+		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
+			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
+		cv::imencode(".png", resMat, processRes.resBuf, param);
+		return processRes;
+	}
+	else
+		return ProcessResult(false);
+}
+
 ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::String& datasetFilePath, const cv::Rect2i& bbox,
 	const std::pair<int, int>& objSizeRange)
 {
@@ -135,17 +191,11 @@ ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::St
 		//compress the reassembled image to jpg and send the response back
 		ProcessResult processRes(true);
 		std::vector<int> param = std::vector<int>(2);
-		param[0] = CV_IMWRITE_JPEG_QUALITY;
-		param[1] = 95;
 		auto xBlockStart = startBlockX * gdalDecoderPtr->GetXBlockSize();
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		if (objSizeRange.first < objSizeRange.second)
-		{
-			postprocess(resMat, cv::Scalar(2), objSizeRange);
-		}
-		cv::imencode(".jpg", resMat, processRes.resBuf, param);
+		cv::imencode(".png", resMat, processRes.resBuf, param);
 		return processRes;
 	}
 	else

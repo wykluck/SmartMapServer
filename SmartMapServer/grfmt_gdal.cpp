@@ -729,13 +729,21 @@ bool GdalDecoder::readHeader(){
 		{
 			if (geoTransformParam[2] == 0 && geoTransformParam[4] == 0)
 			{
-				m_imageMetadata.pixelWidthInMeters = geoTransformParam[1] * unitInMeters;
-				m_imageMetadata.pixelHeightInMeters = geoTransformParam[5] * unitInMeters;
+				m_imageMetadata.pixelWidthInMeters = fabs(geoTransformParam[1] * unitInMeters);
+				m_imageMetadata.pixelHeightInMeters = fabs(geoTransformParam[5] * unitInMeters);
 			}
 			m_imageMetadata.originX = geoTransformParam[0];
 			m_imageMetadata.originY = geoTransformParam[3];
 		}
+		if (ogrSR.AutoIdentifyEPSG() == CE_None)
+		{
+			const char* authName = ogrSR.GetAuthorityName(NULL);
+			const char* authCode = ogrSR.GetAuthorityCode(NULL);
+			m_imageMetadata.projectionIdentifier.append(authName).append(":");
+			m_imageMetadata.projectionIdentifier.append(authCode);
+		}
 		m_imageMetadata.isGeoSpatialInfoValid = true;
+		
 	}
 	
 
