@@ -9,13 +9,16 @@ using namespace cvGIS;
 
 
 std::shared_ptr<ImgDecoderFactory> ImgDecoderFactory::s_factoryPtr;
+std::mutex ImgDecoderFactory::s_factoryPtrMutex;
 
 std::shared_ptr<ImgDecoderFactory> ImgDecoderFactory::Instance()
 {
 	//TODO: need double checked pattern to gurantee uniqueness in multi-threading situation
 	if (!s_factoryPtr)
 	{
-		s_factoryPtr.reset(new ImgDecoderFactory());
+		std::unique_lock<std::mutex> lock(s_factoryPtrMutex);
+		if (!s_factoryPtr)
+			s_factoryPtr.reset(new ImgDecoderFactory());
 	}
 	return s_factoryPtr;
 }

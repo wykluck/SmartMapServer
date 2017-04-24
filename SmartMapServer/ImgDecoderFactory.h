@@ -39,7 +39,7 @@ private:
 	std::shared_ptr<boost::asio::deadline_timer> m_expiredTimerPtr;
 	std::mutex m_decoderMapMutex;
 	
-
+	static std::mutex s_factoryPtrMutex;
 	static std::shared_ptr<ImgDecoderFactory> s_factoryPtr;
 };
 

@@ -86,7 +86,7 @@ void sendProcessResult(const ImageFileReader::ProcessResult& processRes, const h
 	if (processRes.isSuccessful)
 	{
 		httpResponse.set_body(processRes.resBuf);
-		httpResponse.headers().add(U("Content-Type"), "image/jpeg");
+		httpResponse.headers().add(U("Content-Type"), "image/png");
 		httpResponse.set_status_code(http::status_codes::OK);
 	}
 	else

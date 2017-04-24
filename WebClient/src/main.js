@@ -22,6 +22,7 @@ ol.proj.addProjection(projection);
 
 var layers = [
 	new ol.layer.Image({
+	  name: "exportImage",
 	  source: new ol.source.ImageExport({
 		url: 'http://localhost:12345/image',
 		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
@@ -29,6 +30,7 @@ var layers = [
 	  })
 	}),
 	new ol.layer.Image({
+	  name: "segmentedImage",
 	  source: new ol.source.ImageSegment({
 		url: 'http://localhost:12345/image',
 		params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
@@ -36,8 +38,6 @@ var layers = [
 	  })
 	})
 ];
-layers[0].setVisible(true);
-layers[1].setVisible(true);
 
 var mousePositionControl = 
 	new ol.control.MousePosition({
@@ -50,6 +50,7 @@ var mousePositionControl =
 /**
  * @type {ol.Map}
  */
+
 app.map = new ol.Map({
 	controls: ol.control.defaults({
                 attributionOptions: /** @type {olx.control.AttributionOptions} */ ({
@@ -65,6 +66,12 @@ app.map = new ol.Map({
 	  projection: projection
 	})
 });
+new LayerSwitcher({
+    map: app.map
+  , div: 'layerswitcher'
+  //, cssPath: 'css/myStyle.css'
+});
+
 
 /*
  $( "#object-size-ranger" ).slider({

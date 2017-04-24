@@ -161,7 +161,7 @@ BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::Stri
 					BlockImgStruct processedBlockStruct(inBlockStruct.xIndex, inBlockStruct.yIndex);
 					if (inBlockStruct.type == BlockImgStructType::ReadCacheFile)
 					{
-						processedBlockStruct.blockImg = cv::imread(inBlockStruct.blockFileCachePath);
+						processedBlockStruct.blockImg = cv::imread(inBlockStruct.blockFileCachePath, cv::IMREAD_UNCHANGED);
 						//push the processedBlockStruct to its corresponding output queue
 						while (!inBlockStruct.pQueueForOutput->enqueue(processedBlockStruct))
 						{
