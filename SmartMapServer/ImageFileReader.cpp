@@ -47,6 +47,7 @@ void ImageFileReader::postprocess(cv::Mat& img, const cv::Scalar& colorDiff, con
 
 }
 
+
 std::string ImageFileReader::readForMetaData(const cv::String& datasetFilePath)
 {
 	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
@@ -98,12 +99,11 @@ ImageFileReader::ProcessResult ImageFileReader::readForExport(const cv::String& 
 		
 		//compress the reassembled image to jpg and send the response back
 		ProcessResult processRes(true);
-		std::vector<int> param = std::vector<int>(2);
 		auto xBlockStart = startBlockX * gdalDecoderPtr->GetXBlockSize();
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(".png", resMat, processRes.resBuf, param);
+		cv::imencode(ServerSiteConfig::getImageFormat().c_str(), resMat, processRes.resBuf);
 		return processRes;
 	}
 	else
@@ -195,7 +195,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::St
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(".png", resMat, processRes.resBuf, param);
+		cv::imencode(ServerSiteConfig::getImageFormat().c_str(), resMat, processRes.resBuf, param);
 		return processRes;
 	}
 	else

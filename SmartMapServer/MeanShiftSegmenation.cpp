@@ -41,30 +41,6 @@ namespace {
 	const float LUV_THRESHOLD = 0.1f;
 	const int NODE_MULTIPLE = 10;
 
-	cv::Mat RgbToLuv(const cv::Mat& img)
-	{
-		cv::Mat float_img;
-		img.convertTo(float_img, (img.channels() == 3) ? CV_32FC3 : CV_32FC1);
-
-		float_img *= 1.0f / 255.0f;
-		cv::Mat luv;
-		cv::cvtColor(float_img, luv, CV_BGR2Luv);
-
-		return luv;
-	}
-
-	cv::Mat LuvToRgb(const cv::Mat& img)
-	{
-		cv::Mat rgb_float;
-		cv::cvtColor(img, rgb_float, CV_Luv2BGR);
-		rgb_float *= 255.0f;
-
-		cv::Mat output;
-		rgb_float.convertTo(output, (img.channels() == 3) ? CV_8UC3 : CV_8UC1);
-
-		return output;
-	}
-
 	class MeanShiftSegmentationImpl : public MeanShiftSegmentation {
 	private:
 		float sigma_r_;
@@ -72,6 +48,8 @@ namespace {
 		bool optimized_;
 		int min_size_;
 		float speed_threshold_;
+
+
 
 		class RgnAdjList {
 		public:
@@ -168,7 +146,7 @@ namespace {
 			std::vector<int> point_list;
 			int point_count;
 			float h[2];
-			int rgn_count;
+			int rgn_count;	
 
 			MeanShiftSegmentationState(const cv::Mat& inp, cv::OutputArray seg, cv::OutputArray lbls) :
 				h{ 1.0f,1.0f } {
@@ -177,7 +155,8 @@ namespace {
 
 				image = cv::Mat(inp.rows, inp.cols, inp.type());
 
-				lbls.create(inp.rows, inp.cols, (N == 3) ? CV_32SC3 : CV_32SC1);
+				//lbls.create(inp.rows, inp.cols, (N == 3) ? CV_32SC3 : CV_32SC1);
+				lbls.create(inp.rows, inp.cols, CV_32SC1);
 				labels = lbls.getMat();
 
 				modes.resize(L*(N + 2));
@@ -878,442 +857,6 @@ namespace {
 			}
 		}
 
-		void NewOptimizedFilter1(const cv::Mat& inp, MeanShiftSegmentationState& state)
-		{
-			// Declare Variables
-			int		iterationCount, i, j, k, modeCandidateX, modeCandidateY, modeCandidate_i;
-			double	mvAbs, diff, el;
-
-			int width = state.image.cols;
-			int height = state.image.rows;
-			int L = height * width;
-
-			//re-assign bandwidths to sigmaS and sigmaR
-			if (((state.h[0] = static_cast<float>(sigma_s_)) <= 0) || ((state.h[1] = sigma_r_) <= 0))
-				throw std::exception("sigmaS and/or sigmaR is zero or negative.");
-
-			//define input data dimension with lattice
-			int lN = state.image.channels() + 2;
-
-			// Traverse each data point applying mean shift
-			// to each data point
-
-			// Allcocate memory for yk
-			std::vector<double> yk(lN);
-
-			// Allocate memory for Mh
-			std::vector<double> Mh(lN);
-
-			const float* data = inp.ptr<float>();
-			float* msRawData = state.image.ptr<float>();
-
-			// let's use some temporary data
-			std::vector<float> sdata(lN*L);
-
-			// copy the scaled data
-			int idxs, idxd;
-			idxs = idxd = 0;
-			if (inp.channels() == 3)
-			{
-				for (i = 0; i<L; i++)
-				{
-					sdata[idxs++] = (i%width) / static_cast<float>(sigma_s_);
-					sdata[idxs++] = (i / width) / static_cast<float>(sigma_s_);
-					sdata[idxs++] = data[idxd++] / sigma_r_;
-					sdata[idxs++] = data[idxd++] / sigma_r_;
-					sdata[idxs++] = data[idxd++] / sigma_r_;
-				}
-			}
-			else if (inp.channels() == 1)
-			{
-				for (i = 0; i<L; i++)
-				{
-					sdata[idxs++] = (i%width) / static_cast<float>(sigma_s_);
-					sdata[idxs++] = (i / width) / static_cast<float>(sigma_s_);
-					sdata[idxs++] = data[idxd++] / sigma_r_;
-				}
-			}
-			else
-			{
-				for (i = 0; i<L; i++)
-				{
-					sdata[idxs++] = (i%width) / static_cast<float>(sigma_s_);
-					sdata[idxs++] = (i / width) / static_cast<float>(sigma_s_);
-					for (j = 0; j<inp.channels(); j++)
-						sdata[idxs++] = data[idxd++] / sigma_r_;
-				}
-			}
-			// index the data in the 3d buckets (x, y, L)
-			std::vector<int> slist(L);
-			int bucNeigh[27];
-
-			float sMins; // just for L
-			float sMaxs[3]; // for all
-			sMaxs[0] = width / static_cast<float>(sigma_s_);
-			sMaxs[1] = height / static_cast<float>(sigma_s_);
-			sMins = sMaxs[2] = sdata[2];
-			idxs = 2;
-			float cval;
-			for (i = 0; i<L; i++)
-			{
-				cval = sdata[idxs];
-				if (cval < sMins)
-					sMins = cval;
-				else if (cval > sMaxs[2])
-					sMaxs[2] = cval;
-
-				idxs += lN;
-			}
-
-			int nBuck1, nBuck2, nBuck3;
-			int cBuck1, cBuck2, cBuck3, cBuck;
-			nBuck1 = (int)(sMaxs[0] + 3);
-			nBuck2 = (int)(sMaxs[1] + 3);
-			nBuck3 = (int)(sMaxs[2] - sMins + 3);
-			std::vector<int> buckets(nBuck1*nBuck2*nBuck3);
-			for (i = 0; i<(nBuck1*nBuck2*nBuck3); i++)
-				buckets[i] = -1;
-
-			idxs = 0;
-			for (i = 0; i<L; i++)
-			{
-				// find bucket for current data and add it to the list
-				cBuck1 = (int)sdata[idxs] + 1;
-				cBuck2 = (int)sdata[idxs + 1] + 1;
-				cBuck3 = (int)(sdata[idxs + 2] - sMins) + 1;
-				cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-
-				slist[i] = buckets[cBuck];
-				buckets[cBuck] = i;
-
-				idxs += lN;
-			}
-			// init bucNeigh
-			idxd = 0;
-			for (cBuck1 = -1; cBuck1 <= 1; cBuck1++)
-			{
-				for (cBuck2 = -1; cBuck2 <= 1; cBuck2++)
-				{
-					for (cBuck3 = -1; cBuck3 <= 1; cBuck3++)
-					{
-						bucNeigh[idxd++] = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-					}
-				}
-			}
-			double wsuml;// , weight;
-			double hiLTr = 80.0 / sigma_r_;
-			// done indexing/hashing
-
-
-			// Initialize mode table used for basin of attraction
-			memset(&(state.mode_table[0]), 0, width*height);
-
-			for (i = 0; i < L; i++)
-			{
-				// if a mode was already assigned to this data point
-				// then skip this point, otherwise proceed to
-				// find its mode by applying mean shift...
-				if (state.mode_table[i] == 1)
-					continue;
-
-				// initialize point list...
-				state.point_count = 0;
-
-				// Assign window center (window centers are
-				// initialized by createLattice to be the point
-				// data[i])
-				idxs = i*lN;
-				for (j = 0; j<lN; j++)
-					yk[j] = sdata[idxs + j];
-
-				// Calculate the mean shift vector using the lattice
-				// LatticeMSVector(Mh, yk); // modify to new
-				// Initialize mean shift vector
-				for (j = 0; j < lN; j++)
-					Mh[j] = 0;
-				wsuml = 0;
-				// uniformLSearch(Mh, yk_ptr); // modify to new
-				// find bucket of yk
-				cBuck1 = (int)yk[0] + 1;
-				cBuck2 = (int)yk[1] + 1;
-				cBuck3 = (int)(yk[2] - sMins) + 1;
-				cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-				for (j = 0; j<27; j++)
-				{
-					idxd = buckets[cBuck + bucNeigh[j]];
-					// list parse, crt point is cHeadList
-					while (idxd >= 0)
-					{
-						idxs = lN*idxd;
-						// determine if inside search window
-						el = sdata[idxs + 0] - yk[0];
-						diff = el*el;
-						el = sdata[idxs + 1] - yk[1];
-						diff += el*el;
-
-						if (diff < 1.0)
-						{
-							el = sdata[idxs + 2] - yk[2];
-							if (yk[2] > hiLTr)
-								diff = 4 * el*el;
-							else
-								diff = el*el;
-
-							if (inp.channels()>1)
-							{
-								el = sdata[idxs + 3] - yk[3];
-								diff += el*el;
-								el = sdata[idxs + 4] - yk[4];
-								diff += el*el;
-							}
-
-							//weightMap
-							if (diff < 1.0)
-							{
-								double weight = 1.0;
-								for (k = 0; k<lN; k++)
-									Mh[k] += weight*sdata[idxs + k];
-								wsuml += weight;
-							}
-						}
-						idxd = slist[idxd];
-					}
-				}
-				if (wsuml > 0)
-				{
-					for (j = 0; j < lN; j++)
-						Mh[j] = Mh[j] / wsuml - yk[j];
-				}
-				else
-				{
-					for (j = 0; j < lN; j++)
-						Mh[j] = 0;
-				}
-				// Calculate its magnitude squared
-				//mvAbs = 0;
-				//for(j = 0; j < lN; j++)
-				//	mvAbs += Mh[j]*Mh[j];
-				mvAbs = (Mh[0] * Mh[0] + Mh[1] * Mh[1])*sigma_s_*sigma_s_;
-				if (inp.channels() == 3)
-					mvAbs += (Mh[2] * Mh[2] + Mh[3] * Mh[3] + Mh[4] * Mh[4])*sigma_r_*sigma_r_;
-				else
-					mvAbs += Mh[2] * Mh[2] * sigma_r_*sigma_r_;
-
-
-				// Keep shifting window center until the magnitude squared of the
-				// mean shift vector calculated at the window center location is
-				// under a specified threshold (Epsilon)
-
-				// NOTE: iteration count is for speed up purposes only - it
-				//       does not have any theoretical importance
-				iterationCount = 1;
-				while ((mvAbs >= EPSILON) && (iterationCount < LIMIT))
-				{
-
-					// Shift window location
-					for (j = 0; j < lN; j++)
-						yk[j] += Mh[j];
-
-					// check to see if the current mode location is in the
-					// basin of attraction...
-
-					// calculate the location of yk on the lattice
-					modeCandidateX = (int)(sigma_s_*yk[0] + 0.5);
-					modeCandidateY = (int)(sigma_s_*yk[1] + 0.5);
-					modeCandidate_i = modeCandidateY*width + modeCandidateX;
-
-					// if mvAbs != 0 (yk did indeed move) then check
-					// location basin_i in the mode table to see if
-					// this data point either:
-
-					// (1) has not been associated with a mode yet
-					//     (modeTable[basin_i] = 0), so associate
-					//     it with this one
-					//
-					// (2) it has been associated with a mode other
-					//     than the one that this data point is converging
-					//     to (modeTable[basin_i] = 1), so assign to
-					//     this data point the same mode as that of basin_i
-
-					if ((state.mode_table[modeCandidate_i] != 2) && (modeCandidate_i != i))
-					{
-						// obtain the data point at basin_i to
-						// see if it is within h*TC_DIST_FACTOR of
-						// of yk
-						diff = 0;
-						idxs = lN*modeCandidate_i;
-						for (k = 2; k<lN; k++)
-						{
-							el = sdata[idxs + k] - yk[k];
-							diff += el*el;
-						}
-
-						// if the data point at basin_i is within
-						// a distance of h*TC_DIST_FACTOR of yk
-						// then depending on modeTable[basin_i] perform
-						// either (1) or (2)
-						if (diff < TC_DIST_FACTOR)
-						{
-							// if the data point at basin_i has not
-							// been associated to a mode then associate
-							// it with the mode that this one will converge
-							// to
-							if (state.mode_table[modeCandidate_i] == 0)
-							{
-								// no mode associated yet so associate
-								// it with this one...
-								state.point_list[state.point_count++] = modeCandidate_i;
-								state.mode_table[modeCandidate_i] = 2;
-
-							}
-							else
-							{
-
-								// the mode has already been associated with
-								// another mode, thererfore associate this one
-								// mode and the modes in the point list with
-								// the mode associated with data[basin_i]...
-
-								// store the mode info into yk using msRawData...
-								for (j = 0; j < inp.channels(); j++)
-									yk[j + 2] = msRawData[modeCandidate_i*inp.channels() + j] / sigma_r_;
-
-								// update mode table for this data point
-								// indicating that a mode has been associated
-								// with it
-								state.mode_table[i] = 1;
-
-								// indicate that a mode has been associated
-								// to this data point (data[i])
-								mvAbs = -1;
-
-								// stop mean shift calculation...
-								break;
-							}
-						}
-					}
-
-					// Calculate the mean shift vector at the new
-					// window location using lattice
-					// Calculate the mean shift vector using the lattice
-					// LatticeMSVector(Mh, yk); // modify to new
-					// Initialize mean shift vector
-					for (j = 0; j < lN; j++)
-						Mh[j] = 0;
-					wsuml = 0;
-					// uniformLSearch(Mh, yk_ptr); // modify to new
-					// find bucket of yk
-					cBuck1 = (int)yk[0] + 1;
-					cBuck2 = (int)yk[1] + 1;
-					cBuck3 = (int)(yk[2] - sMins) + 1;
-					cBuck = cBuck1 + nBuck1*(cBuck2 + nBuck2*cBuck3);
-					for (j = 0; j<27; j++)
-					{
-						idxd = buckets[cBuck + bucNeigh[j]];
-						// list parse, crt point is cHeadList
-						while (idxd >= 0)
-						{
-							idxs = lN*idxd;
-							// determine if inside search window
-							el = sdata[idxs + 0] - yk[0];
-							diff = el*el;
-							el = sdata[idxs + 1] - yk[1];
-							diff += el*el;
-
-							if (diff < 1.0)
-							{
-								el = sdata[idxs + 2] - yk[2];
-								if (yk[2] > hiLTr)
-									diff = 4 * el*el;
-								else
-									diff = el*el;
-
-								if (inp.channels()>1)
-								{
-									el = sdata[idxs + 3] - yk[3];
-									diff += el*el;
-									el = sdata[idxs + 4] - yk[4];
-									diff += el*el;
-								}
-								//weightMap
-								if (diff < 1.0)
-								{
-									double weight = 1.0;
-									for (k = 0; k<lN; k++)
-										Mh[k] += weight*sdata[idxs + k];
-									wsuml += weight;
-								}
-							}
-							idxd = slist[idxd];
-						}
-					}
-					if (wsuml > 0)
-					{
-						for (j = 0; j < lN; j++)
-							Mh[j] = Mh[j] / wsuml - yk[j];
-					}
-					else
-					{
-						for (j = 0; j < lN; j++)
-							Mh[j] = 0;
-					}
-
-					// Calculate its magnitude squared
-					//mvAbs = 0;
-					//for(j = 0; j < lN; j++)
-					//	mvAbs += Mh[j]*Mh[j];
-					mvAbs = (Mh[0] * Mh[0] + Mh[1] * Mh[1])*sigma_s_*sigma_s_;
-					if (inp.channels() == 3)
-						mvAbs += (Mh[2] * Mh[2] + Mh[3] * Mh[3] + Mh[4] * Mh[4])*sigma_r_*sigma_r_;
-					else
-						mvAbs += Mh[2] * Mh[2] * sigma_r_*sigma_r_;
-
-					// Increment iteration count
-					iterationCount++;
-
-				}
-
-				// if a mode was not associated with this data point
-				// yet associate it with yk...
-				if (mvAbs >= 0)
-				{
-					// Shift window location
-					for (j = 0; j < lN; j++)
-						yk[j] += Mh[j];
-
-					// update mode table for this data point
-					// indicating that a mode has been associated
-					// with it
-					state.mode_table[i] = 1;
-
-				}
-
-				for (k = 0; k<inp.channels(); k++)
-					yk[k + 2] *= sigma_r_;
-
-				// associate the data point indexed by
-				// the point list with the mode stored
-				// by yk
-				for (j = 0; j < state.point_count; j++)
-				{
-					// obtain the point location from the
-					// point list
-					modeCandidate_i = state.point_list[j];
-
-					// update the mode table for this point
-					state.mode_table[modeCandidate_i] = 1;
-
-					//store result into msRawData...
-					for (k = 0; k < inp.channels(); k++)
-						msRawData[inp.channels()*modeCandidate_i + k] = (float)(yk[k + 2]);
-				}
-
-				//store result into msRawData...
-				for (j = 0; j < inp.channels(); j++)
-					msRawData[inp.channels()*i + j] = (float)(yk[j + 2]);
-
-			}
-		}
 
 		void Fill(int regionLoc, int label, int neigh[], MeanShiftSegmentationState& state)
 		{
@@ -1949,6 +1492,30 @@ namespace {
 				}
 			}
 		}
+		
+		cv::Mat RgbToLuv(const cv::Mat& img)
+		{
+			cv::Mat float_img;
+			img.convertTo(float_img, (img.channels() == 3) ? CV_32FC3 : CV_32FC1);
+
+			float_img *= 1.0f / 255.0f;
+			cv::Mat luv;
+			cv::cvtColor(float_img, luv, CV_BGR2Luv);
+
+			return luv;
+		}
+
+		cv::Mat LuvToRgb(const cv::Mat& img)
+		{
+			cv::Mat rgb_float;
+			cv::cvtColor(img, rgb_float, CV_Luv2BGR);
+			rgb_float *= 255.0f;
+
+			cv::Mat output;
+			rgb_float.convertTo(output, (img.channels() == 3) ? CV_8UC3 : CV_8UC1);
+
+			return output;
+		}
 
 	public:
 		MeanShiftSegmentationImpl() {
@@ -1963,10 +1530,11 @@ namespace {
 		virtual void processImage(cv::InputArray inp, cv::OutputArray segmented) override
 		{
 			cv::Mat labels;
-			processImage(inp, segmented, labels);
+			std::vector<int> label_area_table;
+			processImage(inp, segmented, labels, label_area_table);
 		}
 
-		virtual void processImage(cv::InputArray inp, cv::OutputArray segmented, cv::OutputArray labelMap) override
+		virtual void processImage(cv::InputArray inp, cv::OutputArray segmented, cv::OutputArray labelMap, std::vector<int>& label_area_table) override
 		{
 			cv::Mat src = inp.getMat();
 			if (src.channels() != 1 && src.channels() != 3)
@@ -1975,10 +1543,8 @@ namespace {
 			cv::Mat luv = RgbToLuv(src);
 
 			MeanShiftSegmentationState state(luv, segmented, labelMap);
-			if (optimized_)
-				NewOptimizedFilter2(luv, state);
-			else
-				NewOptimizedFilter1(luv, state);
+			NewOptimizedFilter2(luv, state);
+
 
 			Connect(state);
 			//FuseRegions(state);
@@ -1986,6 +1552,7 @@ namespace {
 			segmented.create(src.rows, src.cols, inp.type());
 			auto mat = segmented.getMat();
 			LuvToRgb(state.image).copyTo(mat);
+			label_area_table = std::move(state.mode_point_counts);
 		}
 
 		virtual void setSigmaS(int val) override

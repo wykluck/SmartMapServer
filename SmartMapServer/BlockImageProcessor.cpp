@@ -73,7 +73,7 @@ void tryToSetOpenCLDevice()
 }
 
 
-void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, cv::Mat& edgeImg)
+void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, cv::Mat& edgeImg, const std::vector<int>& label_area_table)
 {
 	edgeImg.create(labelImg.size(), CV_8UC4);
 	edgeImg = cv::Scalar(0, 0, 0, 0);
@@ -87,13 +87,15 @@ void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, 
 	{
 		for (j = 1; j < labelImgWithBorder.cols - 1; ++j)
 		{
-			auto p = labelImgWithBorder.at<cv::Vec3b>(i, j);
+			auto curLabel = labelImgWithBorder.at<int>(i, j);
+			if (label_area_table[curLabel] < 10)
+				continue;
 			//if (p != labelImgWithBorder.at<cv::Vec3b>(i - 1, j - 1))
 			//{
 			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 			//	continue;
 			//}
-			if (p != labelImgWithBorder.at<cv::Vec3b>(i - 1, j))
+			if (curLabel != labelImgWithBorder.at<int>(i - 1, j))
 			{
 				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 				continue;
@@ -103,12 +105,12 @@ void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, 
 			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 			//	continue;
 			//}
-			if (p != labelImgWithBorder.at<cv::Vec3b>(i, j - 1))
+			if (curLabel != labelImgWithBorder.at<int>(i, j - 1))
 			{
 				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 				continue;
 			}
-			if (p != labelImgWithBorder.at<cv::Vec3b>(i, j + 1))
+			if (curLabel != labelImgWithBorder.at<int>(i, j + 1))
 			{
 				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 				continue;
@@ -118,7 +120,7 @@ void drawEdgeOnLabelImage(const cv::Mat& labelImg, const cv::Scalar& edgeColor, 
 			//	edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 			//	continue;
 			//}
-			if (p != labelImgWithBorder.at<cv::Vec3b>(i + 1, j))
+			if (curLabel != labelImgWithBorder.at<int>(i + 1, j))
 			{
 				edgeImg.at<cv::Vec4b>(i - 1, j - 1) = edgeColor;
 				continue;
@@ -170,9 +172,10 @@ BlockImageProcessor::BlockImageProcessor(std::size_t threadCount, const cv::Stri
 					}
 					else if (inBlockStruct.type == BlockImgStructType::BlockForProcess)
 					{
-						m_meanShiftSegPtr->processImage(inBlockStruct.blockImg, outBlockImg, labelBlockImg);	
+						std::vector<int> label_area_table;
+						m_meanShiftSegPtr->processImage(inBlockStruct.blockImg, outBlockImg, labelBlockImg, label_area_table);
 						//extract edge on the labelBlockImg
-						drawEdgeOnLabelImage(outBlockImg, cv::Vec4b(0, 0, 255, 255), processedBlockStruct.blockImg);
+						drawEdgeOnLabelImage(labelBlockImg, cv::Vec4b(0, 0, 255, 255), processedBlockStruct.blockImg, label_area_table);
 						//then write the result to the output tile cache directory
 						cv::imwrite(BlockImageProcessor::getBlockFileCachePath(inBlockStruct.xIndex, inBlockStruct.yIndex, m_cacheDir),
 							processedBlockStruct.blockImg);
@@ -214,7 +217,7 @@ std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, c
 	outputFilePath += std::to_string(xIndex);
 	outputFilePath += "_";
 	outputFilePath += std::to_string(yIndex);
-	outputFilePath += ".png";
+	outputFilePath += ServerSiteConfig::getImageFormat();
 	return outputFilePath;
 }
 

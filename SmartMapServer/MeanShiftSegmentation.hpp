@@ -6,7 +6,7 @@ class MeanShiftSegmentation : public cv::Algorithm {
 public:
 
 	virtual void processImage(cv::InputArray src, cv::OutputArray segmented) = 0;
-	virtual void processImage(cv::InputArray src, cv::OutputArray segmented, cv::OutputArray labelMap) = 0;
+	virtual void processImage(cv::InputArray src, cv::OutputArray segmented, cv::OutputArray labelMap, std::vector<int>& label_area_table) = 0;
 
 	virtual void setSigmaS(int val) = 0;
 	virtual int getSigmaS() const = 0;
