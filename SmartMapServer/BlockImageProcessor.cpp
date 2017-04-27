@@ -21,10 +21,8 @@ std::shared_ptr<BlockImageProcessor> BlockImageProcessor::Instance()
 	//TODO: need double checked pattern to gurantee uniqueness in multi-threading situation
 	if (!s_blockImgPtr)
 	{
-		//TODO: need to set the thread count according to the cpu type
-		std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-		std::string cacheDirUtf8 = convert.to_bytes(ServerSiteConfig::getImageCacheDir().c_str());
-		s_blockImgPtr.reset(new BlockImageProcessor(6, cacheDirUtf8));
+		std::string cacheDirUtf8 = ServerSiteConfig::get().webConfig.processedCacheDir;
+		s_blockImgPtr.reset(new BlockImageProcessor(ServerSiteConfig::get().processConfig.blockProcessorThreadCount, cacheDirUtf8));
 	}
 	return s_blockImgPtr;
 }
@@ -217,7 +215,7 @@ std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, c
 	outputFilePath += std::to_string(xIndex);
 	outputFilePath += "_";
 	outputFilePath += std::to_string(yIndex);
-	outputFilePath += ServerSiteConfig::getImageFormat();
+	outputFilePath += ServerSiteConfig::get().webConfig.defaultImageResponseFormat;
 	return outputFilePath;
 }
 

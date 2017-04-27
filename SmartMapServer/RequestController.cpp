@@ -34,28 +34,26 @@ void RequestController::handleRequest(const http_request &request)
 	//url is supposed to be http://hostname:port/image/<imagePath>/<action>
 	//get image file physical path
 	auto http_path_vec = uri::split_path(decodedUri.path());
-	utility::string_t imageFilePath = ServerSiteConfig::getImageRootDir();
+	
+	std::string imageFilePath = ServerSiteConfig::get().webConfig.datasetRootDir;
 	if (http_path_vec.size() == 3 && http_path_vec[0] == U("image"))
 	{
-		imageFilePath += U("\\");
-		imageFilePath += http_path_vec[1];
+		imageFilePath += ("\\");
+		imageFilePath += utility::conversions::utf16_to_utf8(http_path_vec[1]);
 	}
 
-
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-	std::string imageFilePathUtf8 = convert.to_bytes(imageFilePath.c_str());
 
 	if (http_path_vec[2] == U("segment"))
 	{
-		handleSegmentRequest(decodedUri.query(), request, imageFilePathUtf8);
+		handleSegmentRequest(decodedUri.query(), request, imageFilePath);
 	}
 	else if (http_path_vec[2] == U("export"))
 	{
-		handleExportRequest(decodedUri.query(), request, imageFilePathUtf8);
+		handleExportRequest(decodedUri.query(), request, imageFilePath);
 	}
 	else if (http_path_vec[2] == U("metadata"))
 	{
-		handleMetaDataRequest(decodedUri.query(), request, imageFilePathUtf8);
+		handleMetaDataRequest(decodedUri.query(), request, imageFilePath);
 	}
 }
 

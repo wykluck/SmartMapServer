@@ -1,12 +1,30 @@
 #include "ServerSiteConfig.h"
+#include "NeutralFormatTemplates/NFJsonElement.h"
+#include "NeutralFormatTemplates/NFParser.h"
+#include "NeutralFormatTemplates/NFCommonDef.h"
 
-
-utility::string_t ServerSiteConfig::s_imageRootDir = U("C:\\datasets");
-utility::string_t ServerSiteConfig::s_imageCacheDir = U("C:\\TEMP\\tile_output");
-std::string ServerSiteConfig::s_imageFormat = ".webp";
+using namespace cvGIS;
+ServerSiteConfigStruct ServerSiteConfig::s_serverSiteConfigStruct;
+#define DEFAULT_CONFIGFILE_PATH "../config/config.json"
 
 ServerSiteConfig::ServerSiteConfig()
 {
+	Json::Value jsonRootForRead;
+	try
+	{
+		std::ifstream jsonFileStreamForRead(DEFAULT_CONFIGFILE_PATH);
+		jsonFileStreamForRead >> jsonRootForRead;
+	}
+	catch (...)
+	{
+		std::ostringstream stringStream;
+		stringStream << "Error happens when loading json file from " << DEFAULT_CONFIGFILE_PATH << " .";
+		std::string errorMessage = stringStream.str();
+		throw std::runtime_error(errorMessage.c_str());
+	}
+
+	NF::JsonElement jsonServerSiteConfig(jsonRootForRead);
+	NF::parser< ServerSiteConfigStruct >::parse(jsonServerSiteConfig, "", s_serverSiteConfigStruct);
 }
 
 
@@ -14,18 +32,7 @@ ServerSiteConfig::~ServerSiteConfig()
 {
 }
 
-
-const utility::string_t& ServerSiteConfig::getImageRootDir()
+const ServerSiteConfigStruct& ServerSiteConfig::get()
 {
-	return s_imageRootDir;
-}
-
-const utility::string_t& ServerSiteConfig::getImageCacheDir()
-{
-	return s_imageCacheDir;
-}
-
-const const std::string& ServerSiteConfig::getImageFormat()
-{
-	return s_imageFormat;
+	return s_serverSiteConfigStruct;
 }

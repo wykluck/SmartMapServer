@@ -136,7 +136,130 @@ public:
 		
 	};
 
-	
+	template<>
+	void GetNameValueChild< bool >(const std::string& name, bool& value)
+	{
+		try
+		{
+
+			if (m_JsonValue.isArray())
+			{
+				if (m_valueIter == m_JsonValue.end())
+				{
+					throw NoMoreElementException(name);
+				}
+				value = m_valueIter->asBool();
+				m_valueIter++;
+			}
+			else if (m_JsonValue.isMember(name))
+			{
+				value = m_JsonValue[name].asBool();
+			}
+			else
+			{
+				throw MissingElementException(name);
+			}
+		}
+		catch (std::runtime_error&)
+		{
+			throw IncorrectElementTypeException(name, typeid(bool).name());
+		}
+
+	};
+
+	template<>
+	void GetNameValueChild< float >(const std::string& name, float& value)
+	{
+		try
+		{
+			if (m_JsonValue.isArray())
+			{
+				if (m_valueIter == m_JsonValue.end())
+				{
+					throw NoMoreElementException(name);
+				}
+				value = m_valueIter->asFloat();
+				m_valueIter++;
+			}
+			else if (m_JsonValue.isMember(name))
+			{
+				value = m_JsonValue[name].asFloat();
+			}
+			else
+			{
+				throw MissingElementException(name);
+			}
+		}
+		catch (std::runtime_error&)
+		{
+			throw IncorrectElementTypeException(name, typeid(float).name());
+		}
+
+
+	};
+
+	template<>
+	void GetNameValueChild< double >(const std::string& name, double& value)
+	{
+		try
+		{
+			if (m_JsonValue.isArray())
+			{
+				if (m_valueIter == m_JsonValue.end())
+				{
+					throw NoMoreElementException(name);
+				}
+				value = m_valueIter->asDouble();
+				m_valueIter++;
+			}
+			else if (m_JsonValue.isMember(name))
+			{
+				value = m_JsonValue[name].asDouble();
+			}
+			else
+			{
+				throw MissingElementException(name);
+			}
+		}
+		catch (std::runtime_error&)
+		{
+			throw IncorrectElementTypeException(name, typeid(double).name());
+		}
+
+	};
+
+	template<>
+	void GetNameValueChild< std::string >(const std::string& name, std::string& value)
+	{
+		try
+		{
+			if (m_JsonValue.isArray())
+			{
+				if (m_valueIter == m_JsonValue.end())
+				{
+					throw NoMoreElementException(name);
+				}
+				value = m_valueIter->asString();
+				m_valueIter++;
+			}
+			else if (m_JsonValue.isMember(name))
+			{
+				value = m_JsonValue[name].asString();
+			}
+			else
+			{
+				throw MissingElementException(name);
+			}
+		}
+		catch (std::runtime_error&)
+		{
+			throw IncorrectElementTypeException(name, typeid(std::string).name());
+		}
+
+
+	}
+
+
 private:
 	JsonElement& AddInternalChildElement(const std::string& name, Json::ValueType type)
 	{
@@ -161,128 +284,6 @@ private:
 	Json::ValueIterator m_valueIter;
 };
 
-template<>
-void JsonElement::GetNameValueChild< bool >(const std::string& name, bool& value)
-{
-	try
-	{
 
-		if (m_JsonValue.isArray())
-		{
-			if (m_valueIter == m_JsonValue.end())
-			{
-				throw NoMoreElementException(name);
-			}
-			value = m_valueIter->asBool();
-			m_valueIter++;
-		}
-		else if (m_JsonValue.isMember(name))
-		{
-			value = m_JsonValue[name].asBool();
-		}
-		else
-		{
-			throw MissingElementException(name);
-		}
-	}
-	catch (std::runtime_error&)
-	{
-		throw IncorrectElementTypeException(name, typeid(bool).name());
-	}
-
-	
-};
-
-template<>
-void JsonElement::GetNameValueChild< float >(const std::string& name, float& value)
-{
-	try
-	{
-		if (m_JsonValue.isArray())
-		{
-			if (m_valueIter == m_JsonValue.end())
-			{
-				throw NoMoreElementException(name);
-			}
-			value = m_valueIter->asFloat();
-			m_valueIter++;
-		}
-		else if (m_JsonValue.isMember(name))
-		{
-			value = m_JsonValue[name].asFloat();
-		}
-		else
-		{
-			throw MissingElementException(name);
-		}
-	}
-	catch (std::runtime_error& )
-	{
-		throw IncorrectElementTypeException(name, typeid(float).name());
-	}
-
-	
-};
-
-template<>
-void JsonElement::GetNameValueChild< double >(const std::string& name, double& value)
-{
-	try
-	{
-		if (m_JsonValue.isArray())
-		{
-			if (m_valueIter == m_JsonValue.end())
-			{
-				throw NoMoreElementException(name);
-			}
-			value = m_valueIter->asDouble();
-			m_valueIter++;
-		}
-		else if (m_JsonValue.isMember(name))
-		{
-			value = m_JsonValue[name].asDouble();
-		}
-		else
-		{
-			throw MissingElementException(name);
-		}
-	}
-	catch (std::runtime_error&)
-	{
-		throw IncorrectElementTypeException(name, typeid(double).name());
-	}
-
-};
-
-template<>
-void JsonElement::GetNameValueChild< std::string >(const std::string& name, std::string& value)
-{
-	try
-	{
-		if (m_JsonValue.isArray())
-		{
-			if (m_valueIter == m_JsonValue.end())
-			{
-				throw NoMoreElementException(name);
-			}
-			value = m_valueIter->asString();
-			m_valueIter++;
-		}
-		else if (m_JsonValue.isMember(name))
-		{
-			value = m_JsonValue[name].asString();
-		}
-		else
-		{
-			throw MissingElementException(name);
-		}
-	}
-	catch (std::runtime_error&)
-	{
-		throw IncorrectElementTypeException(name, typeid(std::string).name());
-	}
-
-	
-}
 
 }

@@ -59,8 +59,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForExport(const cv::String& 
 {
 	//TODO: not implemented.
 	auto gdalDecoderPtr = ImgDecoderFactory::Instance()->getDecoder(datasetFilePath);
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-	std::string cacheDirUtf8 = convert.to_bytes(ServerSiteConfig::getImageCacheDir().c_str());
+	std::string cacheDirUtf8 = ServerSiteConfig::get().webConfig.processedCacheDir;
 
 	
 	std::unique_ptr<cv::Mat> assembledImagePtr;
@@ -103,7 +102,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForExport(const cv::String& 
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(ServerSiteConfig::getImageFormat().c_str(), resMat, processRes.resBuf);
+		cv::imencode(ServerSiteConfig::get().webConfig.defaultImageResponseFormat, resMat, processRes.resBuf);
 		return processRes;
 	}
 	else
@@ -118,8 +117,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::St
 
 	
 	auto blockImgProcessorPtr = BlockImageProcessor::Instance();
-	std::wstring_convert<std::codecvt_utf8_utf16<wchar_t>> convert;
-	std::string cacheDirUtf8 = convert.to_bytes(ServerSiteConfig::getImageCacheDir().c_str());
+	std::string cacheDirUtf8 = ServerSiteConfig::get().webConfig.processedCacheDir;
 	
 	//TDDO: only check block counts
 	std::size_t totalBlockCounts = 0;
@@ -195,7 +193,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::St
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(ServerSiteConfig::getImageFormat().c_str(), resMat, processRes.resBuf, param);
+		cv::imencode(ServerSiteConfig::get().webConfig.defaultImageResponseFormat, resMat, processRes.resBuf, param);
 		return processRes;
 	}
 	else
