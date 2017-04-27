@@ -102,7 +102,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForExport(const cv::String& 
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(ServerSiteConfig::get().webConfig.defaultImageResponseFormat, resMat, processRes.resBuf);
+		cv::imencode(ServerSiteConfig::get().webConfig.imageResponseFormat, resMat, processRes.resBuf);
 		return processRes;
 	}
 	else
@@ -193,7 +193,7 @@ ImageFileReader::ProcessResult ImageFileReader::readForSegmentation(const cv::St
 		auto yBlockStart = startBlockY * gdalDecoderPtr->GetYBlockSize();
 		cv::Mat& resMat = assembledImagePtr->rowRange(bbox.tl().y - yBlockStart, bbox.br().y - yBlockStart + 1)
 			.colRange(bbox.tl().x - xBlockStart, bbox.br().x - xBlockStart + 1);
-		cv::imencode(ServerSiteConfig::get().webConfig.defaultImageResponseFormat, resMat, processRes.resBuf, param);
+		cv::imencode(ServerSiteConfig::get().webConfig.imageResponseFormat, resMat, processRes.resBuf, param);
 		return processRes;
 	}
 	else

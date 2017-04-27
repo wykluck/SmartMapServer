@@ -215,7 +215,7 @@ std::string BlockImageProcessor::getBlockFileCachePath(int xIndex, int yIndex, c
 	outputFilePath += std::to_string(xIndex);
 	outputFilePath += "_";
 	outputFilePath += std::to_string(yIndex);
-	outputFilePath += ServerSiteConfig::get().webConfig.defaultImageResponseFormat;
+	outputFilePath += ServerSiteConfig::get().webConfig.imageResponseFormat;
 	return outputFilePath;
 }
 

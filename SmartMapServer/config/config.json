@@ -1,0 +1,10 @@
+{
+	"webConfig": {
+		"datasetRootDir": "c:/datasets",
+		"processedCacheDir": "c:/temp/tile_output",
+		"imageResponseFormat": ".webp"
+	},
+	"processConfig": {
+		"blockProcessorThreadCount": 6
+	}
+}

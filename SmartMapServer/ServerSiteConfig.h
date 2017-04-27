@@ -7,7 +7,7 @@ namespace cvGIS {
 	{
 		std::string datasetRootDir;
 		std::string processedCacheDir;
-		std::string defaultImageResponseFormat;
+		std::string imageResponseFormat;
 	};
 	
 	struct ProcessConfigStruct
@@ -29,14 +29,15 @@ namespace cvGIS {
 
 		static const ServerSiteConfigStruct& get();
 	private:
-		static ServerSiteConfigStruct s_serverSiteConfigStruct;
+		ServerSiteConfigStruct m_serverSiteConfigStruct;
+		static ServerSiteConfig s_serverSiteConfig;
 	};
 }
 
 BOOST_FUSION_ADAPT_STRUCT(cvGIS::WebConfigStruct,
 	(std::string, datasetRootDir)
 	(std::string, processedCacheDir)
-	(std::string, defaultImageResponseFormat)
+	(std::string, imageResponseFormat)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(cvGIS::ProcessConfigStruct,
