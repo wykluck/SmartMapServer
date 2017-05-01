@@ -8,6 +8,7 @@ namespace cvGIS {
 		std::string datasetRootDir;
 		std::string processedCacheDir;
 		std::string imageResponseFormat;
+		std::string baseSiteUrl;
 	};
 	
 	struct ProcessConfigStruct
@@ -38,6 +39,7 @@ BOOST_FUSION_ADAPT_STRUCT(cvGIS::WebConfigStruct,
 	(std::string, datasetRootDir)
 	(std::string, processedCacheDir)
 	(std::string, imageResponseFormat)
+	(std::string, baseSiteUrl)
 )
 
 BOOST_FUSION_ADAPT_STRUCT(cvGIS::ProcessConfigStruct,

@@ -32,7 +32,8 @@ cvGIS::RequestController requestController;
 
 int main(int argc, char* argv[])
 {
-	http_listener listener(U("http://localhost:12345"));
+	uri baseSiteUrl(conversions::utf8_to_utf16(ServerSiteConfig::get().webConfig.baseSiteUrl));
+	http_listener listener(baseSiteUrl);
 
 	int count = 0;
 

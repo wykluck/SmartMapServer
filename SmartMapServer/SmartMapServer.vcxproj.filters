@@ -16,6 +16,9 @@
     <Filter Include="Header Files\NeutralFormatTemplates">
       <UniqueIdentifier>{4a4cd9b6-4cf9-47d0-ae4d-f0870f24f2c9}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Resource Files\config">
+      <UniqueIdentifier>{f46e316e-33f4-4652-b059-36e6024b6f10}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Main.cpp">
@@ -101,5 +104,10 @@
     <ClInclude Include="RequestController.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="config\config.json">
+      <Filter>Resource Files\config</Filter>
+    </None>
   </ItemGroup>
 </Project>

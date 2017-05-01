@@ -181,6 +181,9 @@ SET ERRORLEVEL = 0</Command>
     <ClInclude Include="RequestController.h" />
     <ClInclude Include="ServerSiteConfig.h" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="config\config.json" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
 </Project>
