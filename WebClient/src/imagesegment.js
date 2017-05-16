@@ -9,10 +9,8 @@ goog.require('ol.events');
 goog.require('ol.events.EventType');
 goog.require('ol.extent');
 goog.require('ol.obj');
-goog.require('ol.proj');
 goog.require('ol.source.Image');
 goog.require('ol.source.WMSServerType');
-goog.require('ol.string');
 goog.require('ol.uri');
 
 
@@ -23,7 +21,7 @@ goog.require('ol.uri');
  * @constructor
  * @fires ol.source.Image.Event
  * @extends {ol.source.Image}
- * @param {olx.source.ImageSegmentOptions=} opt_options Options.
+ * @param {olx.source.ImageWMSOptions=} opt_options Options.
  * @api
  */
 ol.source.ImageSegment = function(opt_options) {
@@ -241,8 +239,6 @@ ol.source.ImageSegment.prototype.getImageLoadFunction = function() {
 /**
  * @param {ol.Extent} extent Extent.
  * @param {ol.Size} size Size.
- * @param {number} pixelRatio Pixel ratio.
- * @param {ol.proj.Projection} projection Projection.
  * @param {Object} params Params.
  * @return {string} Request URL.
  * @private
