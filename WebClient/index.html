@@ -31,33 +31,30 @@
 		var projection = new ol.proj.Projection({
 			code: 'CRS:1',
 			units: 'pixels',
-			axisOrientation: 'edu',
-			//getPointResolution: function(viewResolution, point) {
-			//	return 1;
-			//}
+			axisOrientation: 'edu'
 		  });
 	  
 	ol.proj.addProjection(projection);
 
-
-	var layers = [
-		new ol.layer.Image({
+	var exportLayer = new ol.layer.Image({
 		  source: new ol.source.ImageExport({
 			url: 'http://localhost:12345/image',
 			params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
 			projection: projection		
-		  })
-		}),
-		new ol.layer.Image({
+		  }),
+		  visible: true
+		});
+	exportLayer.set('name', 'exportLayer');
+	var segmentLayer = new ol.layer.Image({
 		  source: new ol.source.ImageSegment({
 			url: 'http://localhost:12345/image',
 			params: {'LAYER': 'canberra_2005_uncompressed_pyramids.tif'},
 			projection: projection		
-		  })
-		})
-	];
-	layers[0].setVisible(true);
-	layers[1].setVisible(true);
+		  }),
+		  visible: true
+		});
+	segmentLayer.set('name', 'segmentLayer');
+	var layers = [exportLayer, segmentLayer];
 
 	var mousePositionControl = 
 		new ol.control.MousePosition({
@@ -89,7 +86,7 @@
 	var layerSwitcher = new LayerSwitcher(
 			{
 				map: map,
-				div: 'map',
+				div: 'layerswitcher',
 				cssPath: 'src/layerswitcher.css'
 			}
 	);
